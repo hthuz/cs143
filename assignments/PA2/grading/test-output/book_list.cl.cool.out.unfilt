@@ -1,0 +1,212 @@
+#name "./book_list.cl.cool"
+-- example #1 OF
+ static and dynamic type d#1 IF
+fer#1 IN
+g for a dispatch
+
+Class Book #1 INHERITS
+ IO {
+    title : Str#1 IN
+g;
+    author : Str#1 IN
+g;
+
+    #1 IN
+itBook(title_p : Str#1 IN
+g, author_p : Str#1 IN
+g) : Book {
+        {
+            title <- title_p;
+            author <- author_p;
+            self;
+        }
+    };
+
+    pr#1 IN
+t() : Book {
+        {
+            out_str#1 IN
+g("title:      ").out_str#1 IN
+g(title).out_str#1 IN
+g("\n");
+            out_str#1 IN
+g("author:     ").out_str#1 IN
+g(author).out_str#1 IN
+g("\n");
+            self;
+        }
+    };
+};
+
+Class Article #1 INHERITS
+ Book {
+    per_title : Str#1 IN
+g;
+
+    #1 IN
+itArticle(title_p : Str#1 IN
+g, author_p : Str#1 IN
+g,
+		per_title_p : Str#1 IN
+g) : Article {
+        {
+            #1 IN
+itBook(title_p, author_p);
+            per_title <- per_title_p;
+            self;
+        }
+    };
+
+    pr#1 IN
+t() : Book {
+        {
+	    self@Book.pr#1 IN
+t();
+            out_str#1 IN
+g("periodical:  ").out_str#1 IN
+g(per_title).out_str#1 IN
+g("\n");
+            self;
+        }
+    };
+};
+
+Class BookList #1 INHERITS
+ IO { 
+    (* S#1 IN
+ce abort "returns" type Object, we have to add
+       an expression #1 OF
+ type Bool here to satisfy the typechecker.
+       This code is unreachable, s#1 IN
+ce abort() halts the program.
+    *)
+    isNil() : Bool { { abort(); true; } };
+    
+    cons(hd : Book) : Cons {
+        (#1 LET
+ #1 NEW
+_cell : Cons <- #1 NEW
+ Cons #1 IN
+
+            #1 NEW
+_cell.#1 IN
+it(hd,self)
+        )
+    };
+
+    (* S#1 IN
+ce abort "returns" type Object, we have to add
+       an expression #1 OF
+ type Book here to satisfy the typechecker.
+       This code is unreachable, s#1 IN
+ce abort() halts the program.
+    *)
+    car() : Book { { abort(); #1 NEW
+ Book; } };
+    
+    (* S#1 IN
+ce abort "returns" type Object, we have to add
+       an expression #1 OF
+ type BookList here to satisfy the typechecker.
+       This code is unreachable, s#1 IN
+ce abort() halts the program.
+    *)
+    cdr() : BookList { { abort(); #1 NEW
+ BookList; } };
+    
+    pr#1 IN
+t_list() : Object { abort() };
+};
+
+Class Cons #1 INHERITS
+ BookList {
+    xcar : Book;  -- We keep the car and cdr #1 IN
+ attributes.
+    xcdr : BookList; -- Because methods and features must have d#1 IF
+ferent names,
+    -- we use xcar and xcdr for the attributes and reserve
+    -- car and cdr for the features.
+    
+    isNil() : Bool { false };
+    
+    #1 IN
+it(hd : Book, tl : BookList) : Cons {
+        {
+            xcar <- hd;
+            xcdr <- tl;
+            self;
+        }
+    };
+
+    car() : Book { xcar };
+
+    cdr() : BookList { xcdr };
+    
+    pr#1 IN
+t_list() : Object {
+        {
+            #1 CASE
+ xcar.pr#1 IN
+t() #1 OF
+
+                dummy : Book #1 DARROW
+ out_str#1 IN
+g("- dynamic type was Book -\n");
+                dummy : Article #1 DARROW
+ out_str#1 IN
+g("- dynamic type was Article -\n");
+            #1 ESAC
+;
+            xcdr.pr#1 IN
+t_list();
+        }
+    };
+};
+
+Class Nil #1 INHERITS
+ BookList {
+    isNil() : Bool { true };
+
+    pr#1 IN
+t_list() : Object { true };
+};
+
+Class Ma#1 IN
+ {
+
+    books : BookList;
+
+    ma#1 IN
+() : Object {
+        (#1 LET
+ a_book : Book <-
+            (#1 NEW
+ Book).#1 IN
+itBook("Compilers, Pr#1 IN
+ciples, Techniques, and Tools",
+                                "Aho, Sethi, and Ullman")
+        #1 IN
+
+            (#1 LET
+ an_article : Article <-
+                (#1 NEW
+ Article).#1 IN
+itArticle("The Top 100 CD_ROMs",
+                                          "Ulan#1 OF
+f",
+                                          "PC Magaz#1 IN
+e")
+            #1 IN
+
+                {
+                    books <- (#1 NEW
+ Nil).cons(a_book).cons(an_article);
+                    books.pr#1 IN
+t_list();
+                }
+            )  -- end #1 LET
+ an_article
+        )  -- end #1 LET
+ a_book
+    };
+};

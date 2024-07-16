@@ -1,0 +1,113 @@
+(* hairy  . . .*)
+
+CLASS
+ Foo #1 INHERITS
+ Bazz {
+     a : Razz <- #1 CASE
+ self #1 OF
+
+		      n : Razz #1 DARROW
+ (#1 NEW
+ Bar);
+		      n : Foo #1 DARROW
+ (#1 NEW
+ Razz);
+		      n : Bar #1 DARROW
+ n;
+   	         #1 ESAC
+;
+
+     b : Int <- a.doh() + g.doh() + doh() + pr#1 IN
+th();
+
+     doh() : Int { (#1 LET
+ i : Int <- h #1 IN
+ { h <- h + 2; i; } ) };
+
+};
+
+CLASS
+ Bar #1 INHERITS
+ Razz {
+
+     c : Int <- doh();
+
+     d : Object <- pr#1 IN
+th();
+};
+
+CLASS
+ Razz #1 INHERITS
+ Foo {
+
+     e : Bar <- #1 CASE
+ self #1 OF
+
+		  n : Razz #1 DARROW
+ (#1 NEW
+ Bar);
+		  n : Bar #1 DARROW
+ n;
+		#1 ESAC
+;
+
+     f : Int <- a@Bazz.doh() + g.doh() + e.doh() + doh() + pr#1 IN
+th();
+
+};
+
+CLASS
+ Bazz #1 INHERITS
+ IO {
+
+     h : Int <- 1;
+
+     g : Foo  <- #1 CASE
+ self #1 OF
+
+		     	n : Bazz #1 DARROW
+ (#1 NEW
+ Foo);
+		     	n : Razz #1 DARROW
+ (#1 NEW
+ Bar);
+			n : Foo  #1 DARROW
+ (#1 NEW
+ Razz);
+			n : Bar #1 DARROW
+ n;
+		  #1 ESAC
+;
+
+     i : Object <- pr#1 IN
+th();
+
+     pr#1 IN
+th() : Int { { out_#1 IN
+t(h); 0; } };
+
+     doh() : Int { (#1 LET
+ i: Int <- h #1 IN
+ { h <- h + 1; i; } ) };
+};
+
+(* scary . . . *)
+CLASS
+ Ma#1 IN
+ {
+  a : Bazz <- #1 NEW
+ Bazz;
+  b : Foo <- #1 NEW
+ Foo;
+  c : Razz <- #1 NEW
+ Razz;
+  d : Bar <- #1 NEW
+ Bar;
+
+  ma#1 IN
+(): Str#1 IN
+g { "do noth#1 IN
+g" };
+
+};
+

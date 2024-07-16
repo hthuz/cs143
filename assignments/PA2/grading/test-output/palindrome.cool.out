@@ -1,0 +1,54 @@
+CLASS
+ Ma#1 IN
+ #1 INHERITS
+ IO {
+    pal(s : Str#1 IN
+g) : Bool {
+	#1 IF
+ s.length() = 0
+	#1 THEN
+ true
+	#1 ELSE
+ #1 IF
+ s.length() = 1
+	#1 THEN
+ true
+	#1 ELSE
+ #1 IF
+ s.substr(0, 1) = s.substr(s.length() - 1, 1)
+	#1 THEN
+ pal(s.substr(1, s.length() -2))
+	#1 ELSE
+ false
+	#1 FI
+ #1 FI
+ #1 FI
+
+    };
+
+    i : Int;
+
+    ma#1 IN
+() : SELF_TYPE {
+	{
+            i <- ~1;
+	    out_str#1 IN
+g("enter a str#1 IN
+g\n");
+	    #1 IF
+ pal(#1 IN
+_str#1 IN
+g())
+	    #1 THEN
+ out_str#1 IN
+g("that was a pal#1 IN
+drome\n")
+	    #1 ELSE
+ out_str#1 IN
+g("that was not a pal#1 IN
+drome\n")
+	    #1 FI
+;
+	}
+    };
+};

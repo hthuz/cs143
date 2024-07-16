@@ -1,0 +1,14 @@
+#name "./simplestrings.cool"
+"this is a str#1 IN
+g" "so is this"
+"one more str#1 IN
+g"
+
+"str#1 IN
+gs can have keywords #1 IN
+side: #1 IF
+ #1 ELSE
+ #1 CASE
+"
+"!@#$%^&*()_+1234567890-=	justanother str#1 IN
+g   "

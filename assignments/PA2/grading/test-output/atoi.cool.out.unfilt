@@ -1,0 +1,270 @@
+#name "./atoi.cool"
+(*
+   The #1 CLASS
+ A2I provides #1 IN
+teger-to-str#1 IN
+g and str#1 IN
+g-to-#1 IN
+teger
+conversion rout#1 IN
+es.  To use these rout#1 IN
+es, either #1 IN
+herit them
+#1 IN
+ the #1 CLASS
+ where needed, have a dummy variable bound to
+someth#1 IN
+g #1 OF
+ type A2I, or simpl write (#1 NEW
+ A2I).method(argument).
+*)
+
+(*
+   c2i   Converts a 1-character str#1 IN
+g to an #1 IN
+teger.  Aborts
+         #1 IF
+ the str#1 IN
+g is not "0" through "9"
+*)
+#1 CLASS
+ A2I {
+
+     c2i(char : Str#1 IN
+g) : Int {
+	#1 IF
+ char = "0" #1 THEN
+ 0 #1 ELSE
+
+	#1 IF
+ char = "1" #1 THEN
+ 1 #1 ELSE
+
+	#1 IF
+ char = "2" #1 THEN
+ 2 #1 ELSE
+
+        #1 IF
+ char = "3" #1 THEN
+ 3 #1 ELSE
+
+        #1 IF
+ char = "4" #1 THEN
+ 4 #1 ELSE
+
+        #1 IF
+ char = "5" #1 THEN
+ 5 #1 ELSE
+
+        #1 IF
+ char = "6" #1 THEN
+ 6 #1 ELSE
+
+        #1 IF
+ char = "7" #1 THEN
+ 7 #1 ELSE
+
+        #1 IF
+ char = "8" #1 THEN
+ 8 #1 ELSE
+
+        #1 IF
+ char = "9" #1 THEN
+ 9 #1 ELSE
+
+        { abort(); 0; }  -- the 0 is needed to satisfy the typchecker
+        #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+
+     };
+
+(*
+   i2c is the #1 IN
+verse #1 OF
+ c2i.
+*)
+     i2c(i : Int) : Str#1 IN
+g {
+	#1 IF
+ i = 0 #1 THEN
+ "0" #1 ELSE
+
+	#1 IF
+ i = 1 #1 THEN
+ "1" #1 ELSE
+
+	#1 IF
+ i = 2 #1 THEN
+ "2" #1 ELSE
+
+	#1 IF
+ i = 3 #1 THEN
+ "3" #1 ELSE
+
+	#1 IF
+ i = 4 #1 THEN
+ "4" #1 ELSE
+
+	#1 IF
+ i = 5 #1 THEN
+ "5" #1 ELSE
+
+	#1 IF
+ i = 6 #1 THEN
+ "6" #1 ELSE
+
+	#1 IF
+ i = 7 #1 THEN
+ "7" #1 ELSE
+
+	#1 IF
+ i = 8 #1 THEN
+ "8" #1 ELSE
+
+	#1 IF
+ i = 9 #1 THEN
+ "9" #1 ELSE
+
+	{ abort(); ""; }  -- the "" is needed to satisfy the typchecker
+        #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+ #1 FI
+
+     };
+
+(*
+   a2i converts an ASCII str#1 IN
+g #1 IN
+to an #1 IN
+teger.  The empty str#1 IN
+g
+is converted to 0.  Signed and unsigned str#1 IN
+gs are handled.  The
+method aborts #1 IF
+ the str#1 IN
+g does not represent an #1 IN
+teger.  Very
+long str#1 IN
+gs #1 OF
+ digits produce strange answers because #1 OF
+ arithmetic 
+overflow.
+
+*)
+     a2i(s : Str#1 IN
+g) : Int {
+        #1 IF
+ s.length() = 0 #1 THEN
+ 0 #1 ELSE
+
+	#1 IF
+ s.substr(0,1) = "-" #1 THEN
+ ~a2i_aux(s.substr(1,s.length()-1)) #1 ELSE
+
+        #1 IF
+ s.substr(0,1) = "+" #1 THEN
+ a2i_aux(s.substr(1,s.length()-1)) #1 ELSE
+
+           a2i_aux(s)
+        #1 FI
+ #1 FI
+ #1 FI
+
+     };
+
+(*
+  a2i_aux converts the usigned portion #1 OF
+ the str#1 IN
+g.  As a programm#1 IN
+g
+example, this method is written iteratively.
+*)
+     a2i_aux(s : Str#1 IN
+g) : Int {
+	(#1 LET
+ #1 IN
+t : Int <- 0 #1 IN
+	
+           {	
+               (#1 LET
+ j : Int <- s.length() #1 IN
+
+	          (#1 LET
+ i : Int <- 0 #1 IN
+
+		    #1 WHILE
+ i < j #1 LOOP
+
+			{
+			    #1 IN
+t <- #1 IN
+t * 10 + c2i(s.substr(i,1));
+			    i <- i + 1;
+			}
+		    #1 POOL
+
+		  )
+	       );
+              #1 IN
+t;
+	    }
+        )
+     };
+
+(*
+    i2a converts an #1 IN
+teger to a str#1 IN
+g.  Positive and negative 
+numbers are handled correctly.  
+*)
+    i2a(i : Int) : Str#1 IN
+g {
+	#1 IF
+ i = 0 #1 THEN
+ "0" #1 ELSE
+ 
+        #1 IF
+ 0 < i #1 THEN
+ i2a_aux(i) #1 ELSE
+
+          "-".concat(i2a_aux(i * ~1)) 
+        #1 FI
+ #1 FI
+
+    };
+	
+(*
+    i2a_aux is an example us#1 IN
+g recursion.
+*)		
+    i2a_aux(i : Int) : Str#1 IN
+g {
+        #1 IF
+ i = 0 #1 THEN
+ "" #1 ELSE
+ 
+	    (#1 LET
+ next : Int <- i / 10 #1 IN
+
+		i2a_aux(next).concat(i2c(i - next * 10))
+	    )
+        #1 FI
+
+    };
+
+};

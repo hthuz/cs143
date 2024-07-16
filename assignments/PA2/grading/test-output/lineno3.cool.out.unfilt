@@ -1,0 +1,24 @@
+#name "./lineno3.cool"
+(* #1 FI
+rst l#1 IN
+e
+(* second l#1 IN
+e
+-- third l#1 IN
+e
+*) fourth l#1 IN
+e
+*)
+-- sixth l#1 IN
+e
++
+abc
+-- n#1 IN
+th l#1 IN
+e
+(* tenth l#1 IN
+e
+*)
+DEF
+"str#1 IN
+g"

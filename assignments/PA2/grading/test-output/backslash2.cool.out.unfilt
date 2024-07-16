@@ -1,0 +1,19 @@
+#name "./backslash2.cool"
+"I'm not go#1 IN
+g to escape this #1 NEW
+l#1 IN
+e
+"
+
+"This is also not escaped \\
+"
+
+"This is, though \\\
+"
+
+"\\"
+
+"It's #1 FI
+ne to have this: \n #1 IN
+ a str#1 IN
+g"

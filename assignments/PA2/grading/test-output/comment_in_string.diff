@@ -1,0 +1,15 @@
+1,3c1,10
+< STR_CONST "string (* 123 *) string"
+< STR_CONST "string \n(* 123 *)"
+< STR_CONST "string (* \n123 *)"
+---
+> "str#1 IN
+> g (* 123 *) str#1 IN
+> g"
+> "str#1 IN
+> g \
+> (* 123 *)"
+> "str#1 IN
+> g (* \
+> 123 *)"
+> 

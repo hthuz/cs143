@@ -1,0 +1,12 @@
+1,2c1,8
+< STR_CONST "This is a string--and it's still a string"
+< STR_CONST "(* not a comment *)"
+---
+> "This is a str#1 IN
+> g--and it's still a str#1 IN
+> g"
+> --This is a comment, "not a str#1 IN
+> g"
+> (* "not a str#1 IN
+> g" *)
+> "(* not a comment *)"

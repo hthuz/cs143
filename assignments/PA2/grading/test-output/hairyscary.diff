@@ -1,0 +1,440 @@
+0a1,2
+> (* hairy  . . .*)
+> 
+2,91c4,28
+< TYPEID Foo
+< INHERITS
+< TYPEID Bazz
+< '{'
+< OBJECTID a
+< ':'
+< TYPEID Razz
+< ASSIGN
+< CASE
+< OBJECTID self
+< OF
+< OBJECTID n
+< ':'
+< TYPEID Razz
+< DARROW
+< '('
+< NEW
+< TYPEID Bar
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Foo
+< DARROW
+< '('
+< NEW
+< TYPEID Razz
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Bar
+< DARROW
+< OBJECTID n
+< ';'
+< ESAC
+< ';'
+< OBJECTID b
+< ':'
+< TYPEID Int
+< ASSIGN
+< OBJECTID a
+< '.'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID g
+< '.'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID printh
+< '('
+< ')'
+< ';'
+< OBJECTID doh
+< '('
+< ')'
+< ':'
+< TYPEID Int
+< '{'
+< '('
+< LET
+< OBJECTID i
+< ':'
+< TYPEID Int
+< ASSIGN
+< OBJECTID h
+< IN
+< '{'
+< OBJECTID h
+< ASSIGN
+< OBJECTID h
+< '+'
+< INT_CONST 2
+< ';'
+< OBJECTID i
+< ';'
+< '}'
+< ')'
+< '}'
+< ';'
+< '}'
+< ';'
+---
+>  Foo #1 INHERITS
+>  Bazz {
+>      a : Razz <- #1 CASE
+>  self #1 OF
+> 
+> 		      n : Razz #1 DARROW
+>  (#1 NEW
+>  Bar);
+> 		      n : Foo #1 DARROW
+>  (#1 NEW
+>  Razz);
+> 		      n : Bar #1 DARROW
+>  n;
+>    	         #1 ESAC
+> ;
+> 
+>      b : Int <- a.doh() + g.doh() + doh() + pr#1 IN
+> th();
+> 
+>      doh() : Int { (#1 LET
+>  i : Int <- h #1 IN
+>  { h <- h + 2; i; } ) };
+> 
+> };
+> 
+93,114c30,38
+< TYPEID Bar
+< INHERITS
+< TYPEID Razz
+< '{'
+< OBJECTID c
+< ':'
+< TYPEID Int
+< ASSIGN
+< OBJECTID doh
+< '('
+< ')'
+< ';'
+< OBJECTID d
+< ':'
+< TYPEID Object
+< ASSIGN
+< OBJECTID printh
+< '('
+< ')'
+< ';'
+< '}'
+< ';'
+---
+>  Bar #1 INHERITS
+>  Razz {
+> 
+>      c : Int <- doh();
+> 
+>      d : Object <- pr#1 IN
+> th();
+> };
+> 
+116,177c40,58
+< TYPEID Razz
+< INHERITS
+< TYPEID Foo
+< '{'
+< OBJECTID e
+< ':'
+< TYPEID Bar
+< ASSIGN
+< CASE
+< OBJECTID self
+< OF
+< OBJECTID n
+< ':'
+< TYPEID Razz
+< DARROW
+< '('
+< NEW
+< TYPEID Bar
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Bar
+< DARROW
+< OBJECTID n
+< ';'
+< ESAC
+< ';'
+< OBJECTID f
+< ':'
+< TYPEID Int
+< ASSIGN
+< OBJECTID a
+< '@'
+< TYPEID Bazz
+< '.'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID g
+< '.'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID e
+< '.'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID doh
+< '('
+< ')'
+< '+'
+< OBJECTID printh
+< '('
+< ')'
+< ';'
+< '}'
+< ';'
+---
+>  Razz #1 INHERITS
+>  Foo {
+> 
+>      e : Bar <- #1 CASE
+>  self #1 OF
+> 
+> 		  n : Razz #1 DARROW
+>  (#1 NEW
+>  Bar);
+> 		  n : Bar #1 DARROW
+>  n;
+> 		#1 ESAC
+> ;
+> 
+>      f : Int <- a@Bazz.doh() + g.doh() + e.doh() + doh() + pr#1 IN
+> th();
+> 
+> };
+> 
+179,284c60,94
+< TYPEID Bazz
+< INHERITS
+< TYPEID IO
+< '{'
+< OBJECTID h
+< ':'
+< TYPEID Int
+< ASSIGN
+< INT_CONST 1
+< ';'
+< OBJECTID g
+< ':'
+< TYPEID Foo
+< ASSIGN
+< CASE
+< OBJECTID self
+< OF
+< OBJECTID n
+< ':'
+< TYPEID Bazz
+< DARROW
+< '('
+< NEW
+< TYPEID Foo
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Razz
+< DARROW
+< '('
+< NEW
+< TYPEID Bar
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Foo
+< DARROW
+< '('
+< NEW
+< TYPEID Razz
+< ')'
+< ';'
+< OBJECTID n
+< ':'
+< TYPEID Bar
+< DARROW
+< OBJECTID n
+< ';'
+< ESAC
+< ';'
+< OBJECTID i
+< ':'
+< TYPEID Object
+< ASSIGN
+< OBJECTID printh
+< '('
+< ')'
+< ';'
+< OBJECTID printh
+< '('
+< ')'
+< ':'
+< TYPEID Int
+< '{'
+< '{'
+< OBJECTID out_int
+< '('
+< OBJECTID h
+< ')'
+< ';'
+< INT_CONST 0
+< ';'
+< '}'
+< '}'
+< ';'
+< OBJECTID doh
+< '('
+< ')'
+< ':'
+< TYPEID Int
+< '{'
+< '('
+< LET
+< OBJECTID i
+< ':'
+< TYPEID Int
+< ASSIGN
+< OBJECTID h
+< IN
+< '{'
+< OBJECTID h
+< ASSIGN
+< OBJECTID h
+< '+'
+< INT_CONST 1
+< ';'
+< OBJECTID i
+< ';'
+< '}'
+< ')'
+< '}'
+< ';'
+< '}'
+< ';'
+---
+>  Bazz #1 INHERITS
+>  IO {
+> 
+>      h : Int <- 1;
+> 
+>      g : Foo  <- #1 CASE
+>  self #1 OF
+> 
+> 		     	n : Bazz #1 DARROW
+>  (#1 NEW
+>  Foo);
+> 		     	n : Razz #1 DARROW
+>  (#1 NEW
+>  Bar);
+> 			n : Foo  #1 DARROW
+>  (#1 NEW
+>  Razz);
+> 			n : Bar #1 DARROW
+>  n;
+> 		  #1 ESAC
+> ;
+> 
+>      i : Object <- pr#1 IN
+> th();
+> 
+>      pr#1 IN
+> th() : Int { { out_#1 IN
+> t(h); 0; } };
+> 
+>      doh() : Int { (#1 LET
+>  i: Int <- h #1 IN
+>  { h <- h + 1; i; } ) };
+> };
+> 
+> (* scary . . . *)
+286,326c96,113
+< TYPEID Main
+< '{'
+< OBJECTID a
+< ':'
+< TYPEID Bazz
+< ASSIGN
+< NEW
+< TYPEID Bazz
+< ';'
+< OBJECTID b
+< ':'
+< TYPEID Foo
+< ASSIGN
+< NEW
+< TYPEID Foo
+< ';'
+< OBJECTID c
+< ':'
+< TYPEID Razz
+< ASSIGN
+< NEW
+< TYPEID Razz
+< ';'
+< OBJECTID d
+< ':'
+< TYPEID Bar
+< ASSIGN
+< NEW
+< TYPEID Bar
+< ';'
+< OBJECTID main
+< '('
+< ')'
+< ':'
+< TYPEID String
+< '{'
+< STR_CONST "do nothing"
+< '}'
+< ';'
+< '}'
+< ';'
+---
+>  Ma#1 IN
+>  {
+>   a : Bazz <- #1 NEW
+>  Bazz;
+>   b : Foo <- #1 NEW
+>  Foo;
+>   c : Razz <- #1 NEW
+>  Razz;
+>   d : Bar <- #1 NEW
+>  Bar;
+> 
+>   ma#1 IN
+> (): Str#1 IN
+> g { "do noth#1 IN
+> g" };
+> 
+> };
+> 

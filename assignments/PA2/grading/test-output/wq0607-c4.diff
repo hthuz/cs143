@@ -1,0 +1,42 @@
+1,29c1,11
+< STR_CONST "\\-"
+< '-'
+< STR_CONST "--"
+< STR_CONST "\\"
+< STR_CONST "\"--\""
+< LONGERROR
+< '-'
+< LONGERROR
+< STR_CONST ""
+< LONGERROR
+< STR_CONST "--\\"
+< LONGERROR
+< STR_CONST "\\"
+< STR_CONST "\\"
+< STR_CONST "\"--\""
+< LONGERROR
+< LONGERROR
+< STR_CONST ""
+< LONGERROR
+< STR_CONST "--\\"
+< LONGERROR
+< STR_CONST "\\"
+< STR_CONST "--"
+< LONGERROR
+< STR_CONST "\""
+< LONGERROR
+< LONGERROR
+< STR_CONST "-\""
+< LONGERROR
+---
+> (* Complicated sequence #1 OF
+>  str#1 IN
+> gs and escaped quotes and errors and s#1 IN
+> gle-l#1 IN
+> e comments *)
+> 
+> "\\-"-"-\-"--\""\\"-"\"\\"-\-"\\"""\--"\""\"
+> "\\""\"--\""\-\""\"--\\"\"\\"--""\"\--""\"
+> "\\""\"--\""\\""\"--\\"\"\\""--"\"\""\"
+> "\-\""\--"\""\--\""\"\\"\--"\\"""\--"\""\"
+> 
