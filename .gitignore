@@ -1,1 +1,7 @@
 *.o
+*lex.yy.c
+assignments/PA2/lexer
+assignments/PA2/cool-lex.cc
+.vscode
+gdb-7.6/
+termcap-1.3.1/

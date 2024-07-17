@@ -65,19 +65,20 @@ WHILE   "while"
 CASE    "case"
 ESAC    "esac"
 OF      "of"
-DARROW          =>
+DARROW  =>
 NEW     "new"
 ISVOID  "isvoid"
+INT_CONST [0-9]*
 TRUE    "true"
 FALSE   "false"
+TYPEID [A-Z]([a-zA-Z]|[0-9]|_)*
+OBJECTID [a-z]([a-zA-Z]|[0-9]|_)*
+ASSIGN "<-"
+NOT "~"
+LE "<="
 
-DIGIT [0-9]
-DIGITS DIGIT+
-LETTER [a-zA-Z]
-ID LETTER(LETTER|DIGIT)*
 WHITESPACE (" "|"\n"|"\t")+
-// STRING \"[^\"]\"
-expr TRUE|FALSE|STRING|ID|DIGITS
+EXPR TRUE|FALSE|STRING|ID|DIGITS
 
 %%
 
@@ -85,15 +86,32 @@ expr TRUE|FALSE|STRING|ID|DIGITS
   *  Nested comments
   */
 
-
  /*
   *  The multiple-character operators.
   */
+{INT_CONST} { yylval.symbol = inttable.add_string(yytext); return INT_CONST; }
+{TRUE} { yylval.boolean = true; return BOOL_CONST;}
+{FALSE} { yylval.boolean = false; return BOOL_CONST; }
+{TYPEID} { yylval.symbol = idtable.add_string(yytext); return TYPEID; }
+
+"\n" {
+    curr_lineno += 1;
+}
+" "|"\f"|"\r"|"\t"|"\v" {
+  
+}
+
+
+ /*
+  * Keywords are case-insensitive except for the values true and false,
+  * which must begin with a lower-case letter.
+  */
+"self" { yylval.symbol = idtable.add_string(yytext); return TYPEID; }
+"SELF_TYPE" { yylval.symbol = idtable.add_string(yytext); return TYPEID; }
 {CLASS} {return {CLASS};}
 {ELSE} {return {ELSE};}
 {FI} {return {FI};}
 {IF} {return {IF};}
-{IN} {return {IN};}
 {INHERITS} {return {INHERITS};}
 {LET} {return {LET};}
 {LOOP} {return {LOOP};}
@@ -103,35 +121,26 @@ expr TRUE|FALSE|STRING|ID|DIGITS
 {CASE} {return {CASE};}
 {ESAC} {return {ESAC};}
 {OF} {return {OF};}
-{DARROW}		{ return (DARROW); }
+{DARROW} { return (DARROW); }
 {NEW} {return {NEW};}
 {ISVOID} {return {ISVOID};}
-{BOOL_CONST} {}
-{TRUE} {
-    curr_lineno = 
-    yylval.boolean = true;
-    return BOOL_CONST;
-}
-{FALSE} {
-    yylval.boolean = false;
-    return BOOL_CONST;
-}
-
-{DIGITS} {yylval.}
-
-"\n" {
-    curr_lineno += 1;
-}
-
-expr {
-    yylval.expression = strdup(yytext);
-}
-
- /*
-  * Keywords are case-insensitive except for the values true and false,
-  * which must begin with a lower-case letter.
-  */
-
+{ASSIGN} {return {ASSIGN};}
+{NOT} {return {NOT};}
+{LE} {return {LE};}
+"(" {return 40;}
+")" {return 41;}
+"*" {return 42;}
+"+" {return 43;}
+"," {return 44;}
+"-" {return 45;}
+"." {return 46;}
+"/" {return 47;}
+":" {return 58;}
+";" {return 59;}
+"<" {return 60;}
+"=" {return 61;}
+"{" {return 123;}
+"}" {return 125;}
 
  /*
   *  String constants (C syntax)
@@ -140,5 +149,7 @@ expr {
   *
   */
 
+
+{OBJECTID} { yylval.symbol = idtable.add_string(yytext); return OBJECTID; }
 
 %%
