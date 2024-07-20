@@ -1,3 +1,0 @@
-#name "./s32.test.cool"
--- tricky: this should be seen as an error, not two tokens
-*)

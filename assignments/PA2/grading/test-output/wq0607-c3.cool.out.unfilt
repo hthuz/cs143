@@ -1,7 +1,0 @@
-#name "./wq0607-c3.cool"
-(* Complicated sequence #1 OF
- str#1 IN
-gs and escaped quotes and errors *)
-
-"\\""\"\""\\""\"\\"\"\\"""\"\""\"
-

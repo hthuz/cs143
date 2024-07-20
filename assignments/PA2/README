@@ -105,4 +105,7 @@ Instructions
 
 Write-up for PA2
 ----------------
-
+After running perl PA1grading.pl
+*.cool under directory grading is test files for grading
+*.cool.out are the benchmark for lexer output
+test-output/ shows all failed cases

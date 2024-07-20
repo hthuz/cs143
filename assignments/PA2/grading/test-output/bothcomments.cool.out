@@ -1,6 +1,0 @@
--- (* This isn't
-what the programmer thought it was *) 
-.
-(* -- neither is this *) #1 IF
- 5 #1 THEN
-

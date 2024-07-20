@@ -1,4 +1,0 @@
-#name "./nestedcomment.cool"
-(* XXX (* XXX *) XXX *) 
-(* XXX (* YYY *)
-(* ZZZ *) XXX *)

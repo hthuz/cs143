@@ -1,3 +1,0 @@
-#name "./s31.test.cool"
-(* subtle: this is illegal *)
-_

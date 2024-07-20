@@ -1,7 +1,0 @@
-#name "./s19.test.cool"
-(* illegal: unescaped #1 NEW
-l#1 IN
-e *)
-"c
-d"
-
