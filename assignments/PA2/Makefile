@@ -4,7 +4,7 @@ CLASS= cs143
 CLASSDIR= ../..
 LIB= -lfl
 
-SRC= cool.flex.c test.cl README 
+SRC= cool.flex test.cl README 
 CSRC= lextest.cc utilities.cc stringtab.cc handle_flags.cc
 TSRC= mycoolc
 HSRC= 
@@ -41,8 +41,8 @@ lexer: ${OBJS}
 .cc.o:
 	${CC} ${CFLAGS} -c $<
 
-cool-lex.cc: cool.flex.c
-	${FLEX} cool.flex.c
+cool-lex.cc: cool.flex
+	${FLEX} cool.flex
 
 dotest:	lexer test.cl
 	./lexer test.cl

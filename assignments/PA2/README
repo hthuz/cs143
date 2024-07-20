@@ -109,3 +109,8 @@ After running perl PA1grading.pl
 *.cool under directory grading is test files for grading
 *.cool.out are the benchmark for lexer output
 test-output/ shows all failed cases
+
+
+In terms of long string error
+str_ptr shouldn't increase once it has reached max for security concern.
+However, we ignore it here for convenience.
