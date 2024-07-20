@@ -37,6 +37,8 @@ char *string_buf_ptr;
 char *string_buf_ptr_end;
 bool eof_err_reported = false;
 bool null_err_reported = false;
+bool escaped_null_err_reported = false;
+bool long_str_err_reported = false;
 
 extern int curr_lineno;
 extern int verbose_flag;
@@ -106,14 +108,32 @@ EXPR TRUE|FALSE|STRING|ID|DIGITS
   }
 
 "--"+.*+"\n" {curr_lineno++;}
+"--"+.* {}
 "*)" {yylval.error_msg = "Unmatched *)"; return (ERROR);}
 
-"\"" null_err_reported = false,string_buf_ptr = string_buf; string_buf_ptr_end = string_buf_ptr + MAX_STR_CONST; BEGIN(STR);
+"\"" {
+  null_err_reported = false;
+  escaped_null_err_reported = false;
+  long_str_err_reported = false;
+  string_buf_ptr = string_buf;
+  /* The actual max len of string is 1024 */
+  string_buf_ptr_end = string_buf_ptr + MAX_STR_CONST - 1;
+  BEGIN(STR);
+} 
 <STR>"\"" {
     BEGIN(INITIAL);
     *string_buf_ptr = '\0';
+    /* cout << (int) string_buf_ptr << " " << (int) string_buf_ptr_end << endl; */
+    if (long_str_err_reported) {
+      yylval.error_msg = "String constant too long";
+      return (ERROR);
+    }
     if (null_err_reported) {
       yylval.error_msg = "String contains null character";
+      return (ERROR);
+    }
+    if (escaped_null_err_reported) {
+      yylval.error_msg = "String contains escaped null character";
       return (ERROR);
     }
     yylval.symbol = stringtable.add_string(string_buf);
@@ -130,45 +150,38 @@ EXPR TRUE|FALSE|STRING|ID|DIGITS
   null_err_reported = true;
 }
 <STR>"\\0" {
-  if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
-  }
+  if (string_buf_ptr == string_buf_ptr_end) 
+    long_str_err_reported = true;
   *string_buf_ptr++ = '0';
 }
+<STR>"\\\0" {
+  escaped_null_err_reported = true;
+}
 <STR>"\\b" {
-  if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
-  }
+  if (string_buf_ptr == string_buf_ptr_end) 
+    long_str_err_reported = true;
   *string_buf_ptr++ = '\b';
 }
 <STR>"\\t" {
-  if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
-  }
+  if (string_buf_ptr == string_buf_ptr_end)
+    long_str_err_reported = true;
   *string_buf_ptr++ = '\t';
 }
 <STR>"\\n" {
-  if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
+  if (string_buf_ptr == string_buf_ptr_end)  {
+    long_str_err_reported = true;
   }
   *string_buf_ptr++ = '\n';
 }
 <STR>"\\f" {
-  if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
-  }
+  if (string_buf_ptr == string_buf_ptr_end) 
+    long_str_err_reported = true;
   *string_buf_ptr++ = '\f';
 }
 
 <STR>\\(.|\n) {
   if (string_buf_ptr == string_buf_ptr_end) {
-    yylval.error_msg = "String constant too long";
-    return (ERROR);
+    long_str_err_reported = true;
   }
   if (yytext[1] == '\n') 
     curr_lineno++;
@@ -178,10 +191,8 @@ EXPR TRUE|FALSE|STRING|ID|DIGITS
 <STR>[^\0\\\n\"]+ {
   int i = 0;
   while (yytext[i]) {
-    if (string_buf_ptr == string_buf_ptr_end) {
-      yylval.error_msg = "String constant too long";
-      return (ERROR);
-    }
+    if (string_buf_ptr == string_buf_ptr_end)
+      long_str_err_reported = true;
     *string_buf_ptr++ = yytext[i++];
   }
 
