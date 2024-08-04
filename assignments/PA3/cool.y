@@ -136,6 +136,14 @@
     
     /* You will want to change the following line. */
     %type <features> dummy_feature_list
+    %type <feature> feature
+    %type <formals> comma_dummy_formal_list /* [,formal]* */
+    %type <formal> formal
+    %type <expression> expr
+    %type <expressions> comma_dummy_expr_list 
+    %type <expressions> semi_expr_list /* [expr;]+ */
+    %type <cases> case_list
+    %type <case_> case
     
     /* Precedence declarations go here. */
     
@@ -167,7 +175,113 @@
     /* Feature list may be empty, but no empty features in list. */
     dummy_feature_list:		/* empty */
     {  $$ = nil_Features(); }
+    | dummy_feature_list feature ';'
+    { $$ = append_Features($1,single_Features($2)); }
+    ;
     
+    feature
+    : OBJECTID '(' ')' ':' TYPEID '{' expr '}'
+    {$$ = method($1,nil_Formals(),$5,$7);}
+    | OBJECTID '(' formal comma_dummy_formal_list ')' ':' TYPEID '{' expr '}'
+    {$$ = method($1, append_Formals(single_Formals($3),$4), $7, $9);}
+    | OBJECTID ':' TYPEID
+    {$$ = attr($1, $3, no_expr());}
+    | OBJECTID ':' TYPEID ASSIGN expr
+    {$$ = attr($1,$3,$5); }
+    ;
+
+    comma_dummy_formal_list:		/* empty */
+    { $$ = nil_Formals(); }
+    | comma_dummy_formal_list ',' formal
+    { $$ = append_Formals($1,single_Formals($3)); }
+    ;
+
+    formal: OBJECTID ':' TYPEID {$$ = formal($1,$3); }
+    ;
+
+    comma_dummy_expr_list: /* emtpy*/
+    { $$ = nil_Expressions();}
+    | comma_dummy_expr_list ',' expr
+    { $$ = append_Expressions($1, single_Expressions($3));}
+    ;
+
+    case_list
+    : case ';'
+    { $$ = single_Cases($1);}
+    | case_list case
+    { $$ = append_Cases($1, single_Cases($2));}
+    ;
+
+    case
+    : OBJECTID ':' TYPEID DARROW expr
+    { $$ = branch($1, $3, $5);}
+    ;
+
+
+    semi_expr_list
+    : expr ';'
+    { $$ = single_Expressions($1);}
+    | semi_expr_list expr ';'
+    { $$ = append_Expressions($1, single_Expressions($2));}
+    ;
+
+    expr
+    : OBJECTID ASSIGN expr
+    { $$ = assign($1, $3);}
+    | expr '@' TYPEID '.' OBJECTID '(' expr comma_dummy_expr_list ')'
+    { $$ = static_dispatch($1,$3,$5, append_Expressions(single_Expressions($7), $8));}
+    | expr '@' TYPEID '.' OBJECTID '(' ')'
+    { $$ = static_dispatch($1,$3,$5, nil_Expressions());}
+    | expr '.' OBJECTID '(' expr comma_dummy_expr_list ')'
+    { $$ = dispatch($1, $3, append_Expressions(single_Expressions($5), $6));}
+    | expr '.' OBJECTID '(' ')'
+    { $$ = dispatch($1, $3, nil_Expressions());}
+    | OBJECTID '(' ')'
+    { $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions());}
+    | IF expr THEN expr ELSE expr FI
+    { $$ = cond($2,$4,$6);}
+    | WHILE expr LOOP expr POOL
+    { $$ = loop($2,$4);}
+    | '{' semi_expr_list '}'
+    { $$ = block($2);}
+    /* skip let for now*/
+    | CASE expr OF case_list ESAC
+    { $$ = typcase($2, $4);}
+    | NEW TYPEID
+    { $$ = new_($2);}
+    | ISVOID expr
+    { $$ = isvoid($2);}
+    | expr '+' expr
+    { $$ = plus($1, $3);}
+    | expr '-' expr
+    { $$ = sub($1, $3);}
+    | expr '*' expr
+    { $$ = mul($1, $3);}
+    | expr '/' expr
+    { $$ = divide($1, $3);}
+    | '~' expr
+    { $$ = neg($2);}
+    | expr '<' expr
+    { $$ = lt($1, $3);}
+    | expr LE expr
+    { $$ = leq($1, $3);}
+    | expr '=' expr
+    { $$ = eq($1, $3);}
+    | NOT expr
+    { $$ = comp($2);}
+    | '(' expr ')'
+    { $$ = $2;}
+    | OBJECTID
+    { $$ = object($1);}
+    | INT_CONST
+    { $$ = int_const($1);}
+    | STR_CONST
+    { $$ = string_const($1);}
+    | BOOL_CONST
+    { $$ = bool_const($1);}
+    ;
+
+
     
     /* end of grammar */
     %%
