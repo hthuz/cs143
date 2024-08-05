@@ -144,6 +144,16 @@
     %type <expressions> semi_expr_list /* [expr;]+ */
     %type <cases> case_list
     %type <case_> case
+
+
+    %left ASSIGN
+    %left '.'
+    %left '@'  /* To be checked */
+    %left NOT ISVOID
+    %left '<' '=' LE
+    %left '+' '-'
+    %left '*' '/'
+    %left '~'
     
     /* Precedence declarations go here. */
     
@@ -238,6 +248,8 @@
     { $$ = dispatch($1, $3, nil_Expressions());}
     | OBJECTID '(' ')'
     { $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions());}
+    | OBJECTID '(' expr comma_dummy_expr_list ')'
+    { $$ = dispatch(object(idtable.add_string("self")), $1, append_Expressions(single_Expressions($3), $4));}
     | IF expr THEN expr ELSE expr FI
     { $$ = cond($2,$4,$6);}
     | WHILE expr LOOP expr POOL
