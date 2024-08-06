@@ -180,6 +180,8 @@
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    | error ';'
+    {}
     ;
     
     /* Feature list may be empty, but no empty features in list. */
@@ -198,6 +200,8 @@
     {$$ = attr($1, $3, no_expr());}
     | OBJECTID ':' TYPEID ASSIGN expr
     {$$ = attr($1,$3,$5); }
+    | error
+    {}
     ;
 
     comma_dummy_formal_list:		/* empty */
@@ -291,6 +295,8 @@
     { $$ = string_const($1);}
     | BOOL_CONST
     { $$ = bool_const($1);}
+    | error 
+    {}
     ;
 
 
