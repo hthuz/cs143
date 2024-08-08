@@ -237,6 +237,10 @@
     { $$ = single_Expressions($1);}
     | semi_expr_list expr ';'
     { $$ = append_Expressions($1, single_Expressions($2));}
+    | error
+    {}
+    | error ';'
+    {}
     ;
 
     expr
@@ -295,8 +299,6 @@
     { $$ = string_const($1);}
     | BOOL_CONST
     { $$ = bool_const($1);}
-    | error 
-    {}
     ;
 
 
