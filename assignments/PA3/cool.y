@@ -146,14 +146,15 @@
     %type <case_> case
 
 
-    %left ASSIGN
-    %left '.'
-    %left '@'  /* To be checked */
-    %left NOT ISVOID
-    %left '<' '=' LE
+    %right ASSIGN
+    %left NOT
+    %nonassoc '<' '=' LE
     %left '+' '-'
     %left '*' '/'
+    %left ISVOID
     %left '~'
+    %left '@'
+    %left '.'
     
     /* Precedence declarations go here. */
     
