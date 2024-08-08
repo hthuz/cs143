@@ -137,10 +137,10 @@
     /* You will want to change the following line. */
     %type <features> dummy_feature_list
     %type <feature> feature
-    %type <formals> comma_dummy_formal_list /* [,formal]* */
+    %type <formals> comma_formal_list /* [,formal]* */
     %type <formal> formal
     %type <expression> expr
-    %type <expressions> comma_dummy_expr_list 
+    %type <expressions> comma_expr_list 
     %type <expressions> semi_expr_list /* [expr;]+ */
     %type <cases> case_list
     %type <case_> case
@@ -197,8 +197,8 @@
     feature
     : OBJECTID '(' ')' ':' TYPEID '{' expr '}'
     {$$ = method($1,nil_Formals(),$5,$7);}
-    | OBJECTID '(' formal comma_dummy_formal_list ')' ':' TYPEID '{' expr '}'
-    {$$ = method($1, append_Formals(single_Formals($3),$4), $7, $9);}
+    | OBJECTID '(' comma_formal_list ')' ':' TYPEID '{' expr '}'
+    {$$ = method($1, $3, $6, $8);}
     | OBJECTID ':' TYPEID
     {$$ = attr($1, $3, no_expr());}
     | OBJECTID ':' TYPEID ASSIGN expr
@@ -207,19 +207,21 @@
     {}
     ;
 
-    comma_dummy_formal_list:		/* empty */
-    { $$ = nil_Formals(); }
-    | comma_dummy_formal_list ',' formal
-    { $$ = append_Formals($1,single_Formals($3)); }
+    comma_formal_list
+    : formal
+    { $$ = single_Formals($1); }
+    | formal ',' comma_formal_list
+    { $$ = append_Formals(single_Formals($1), $3); }
     ;
 
     formal: OBJECTID ':' TYPEID {$$ = formal($1,$3); }
     ;
 
-    comma_dummy_expr_list: /* emtpy*/
-    { $$ = nil_Expressions();}
-    | comma_dummy_expr_list ',' expr
-    { $$ = append_Expressions($1, single_Expressions($3));}
+    comma_expr_list
+    : expr
+    { $$ = single_Expressions($1);}
+    | expr ',' comma_expr_list
+    { $$ = append_Expressions(single_Expressions($1), $3);}
     ;
 
     case_list
@@ -240,10 +242,6 @@
     { $$ = single_Expressions($1);}
     | semi_expr_list expr ';'
     { $$ = append_Expressions($1, single_Expressions($2));}
-    | error
-    {}
-    | error ';'
-    {}
     ;
 
     /* The key is to rewrite the cool grammer to support multiple OBJECT : TYPEID */
@@ -258,23 +256,24 @@
     { $$ = let($1, $3, $5, $7);}
     | error
     {}
+    ;
 
     /* expr ::= let ID : TYPE [, ID : TYPE ] in expr  */
     expr
     : OBJECTID ASSIGN expr
     { $$ = assign($1, $3);}
-    | expr '@' TYPEID '.' OBJECTID '(' expr comma_dummy_expr_list ')'
-    { $$ = static_dispatch($1,$3,$5, append_Expressions(single_Expressions($7), $8));}
+    | expr '@' TYPEID '.' OBJECTID '(' comma_expr_list ')'
+    { $$ = static_dispatch($1,$3,$5,$7);}
     | expr '@' TYPEID '.' OBJECTID '(' ')'
     { $$ = static_dispatch($1,$3,$5, nil_Expressions());}
-    | expr '.' OBJECTID '(' expr comma_dummy_expr_list ')'
-    { $$ = dispatch($1, $3, append_Expressions(single_Expressions($5), $6));}
+    | expr '.' OBJECTID '(' comma_expr_list ')'
+    { $$ = dispatch($1, $3, $5 );}
     | expr '.' OBJECTID '(' ')'
     { $$ = dispatch($1, $3, nil_Expressions());}
     | OBJECTID '(' ')'
     { $$ = dispatch(object(idtable.add_string("self")), $1, nil_Expressions());}
-    | OBJECTID '(' expr comma_dummy_expr_list ')'
-    { $$ = dispatch(object(idtable.add_string("self")), $1, append_Expressions(single_Expressions($3), $4));}
+    | OBJECTID '(' comma_expr_list ')'
+    { $$ = dispatch(object(idtable.add_string("self")), $1, $3);}
     | IF expr THEN expr ELSE expr FI
     { $$ = cond($2,$4,$6);}
     | WHILE expr LOOP expr POOL
@@ -317,6 +316,8 @@
     { $$ = string_const($1);}
     | BOOL_CONST
     { $$ = bool_const($1);}
+    | error 
+    {}
     ;
 
 
