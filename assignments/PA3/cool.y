@@ -172,9 +172,11 @@
     : class			/* single class */
     { $$ = single_Classes($1);
     parse_results = $$; }
-    | class_list class	/* several classes */
-    { $$ = append_Classes($1,single_Classes($2)); 
+    | class class_list	/* several classes */
+    { $$ = append_Classes(single_Classes($1),$2); 
     parse_results = $$; }
+    | error class_list /* going to next class, semicolumn is already included in class */
+    {}
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
@@ -183,15 +185,15 @@
     stringtable.add_string(curr_filename)); }
     | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
-    | error ';'
-    {}
     ;
     
     /* Feature list may be empty, but no empty features in list. */
     dummy_feature_list:		/* empty */
     {  $$ = nil_Features(); }
-    | dummy_feature_list feature ';'
-    { $$ = append_Features($1,single_Features($2)); }
+    | feature ';' dummy_feature_list
+    { $$ = append_Features(single_Features($1),$3); }
+    | error ';' dummy_feature_list /* going on to next feature */
+    {}
     ;
     
     feature
@@ -203,8 +205,6 @@
     {$$ = attr($1, $3, no_expr());}
     | OBJECTID ':' TYPEID ASSIGN expr
     {$$ = attr($1,$3,$5); }
-    | error
-    {}
     ;
 
     comma_formal_list
@@ -242,6 +242,8 @@
     { $$ = single_Expressions($1);}
     | semi_expr_list expr ';'
     { $$ = append_Expressions($1, single_Expressions($2));}
+    | error ';' /* an expression inside a {...} block */
+    {}
     ;
 
     /* The key is to rewrite the cool grammer to support multiple OBJECT : TYPEID */
@@ -254,7 +256,7 @@
     { $$ = let($1, $3, no_expr(), $5);}
     | OBJECTID ':' TYPEID  ASSIGN expr  ',' let_expr /* expanding case */
     { $$ = let($1, $3, $5, $7);}
-    | error
+    | error ',' let_expr /* going to the next variable */
     {}
     ;
 
@@ -316,8 +318,6 @@
     { $$ = string_const($1);}
     | BOOL_CONST
     { $$ = bool_const($1);}
-    | error 
-    {}
     ;
 
 
