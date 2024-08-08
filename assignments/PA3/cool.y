@@ -144,8 +144,10 @@
     %type <expressions> semi_expr_list /* [expr;]+ */
     %type <cases> case_list
     %type <case_> case
+    %type <expression> let_expr
 
 
+    %right LET IN
     %right ASSIGN
     %left NOT
     %nonassoc '<' '=' LE
@@ -244,6 +246,20 @@
     {}
     ;
 
+    /* The key is to rewrite the cool grammer to support multiple OBJECT : TYPEID */
+    let_expr
+    : OBJECTID ':' TYPEID IN expr /* end case */
+    { $$ = let($1, $3, no_expr(), $5);}
+    | OBJECTID ':' TYPEID ASSIGN expr IN expr /* end case */
+    { $$ = let($1, $3, $5, $7);}
+    | OBJECTID ':' TYPEID ',' let_expr /* expanding case */
+    { $$ = let($1, $3, no_expr(), $5);}
+    | OBJECTID ':' TYPEID  ASSIGN expr  ',' let_expr /* expanding case */
+    { $$ = let($1, $3, $5, $7);}
+    | error
+    {}
+
+    /* expr ::= let ID : TYPE [, ID : TYPE ] in expr  */
     expr
     : OBJECTID ASSIGN expr
     { $$ = assign($1, $3);}
@@ -265,7 +281,8 @@
     { $$ = loop($2,$4);}
     | '{' semi_expr_list '}'
     { $$ = block($2);}
-    /* skip let for now*/
+    | LET let_expr
+    { $$ = $2;}
     | CASE expr OF case_list ESAC
     { $$ = typcase($2, $4);}
     | NEW TYPEID
