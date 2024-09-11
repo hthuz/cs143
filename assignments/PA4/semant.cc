@@ -207,13 +207,17 @@ void ClassTable::install_basic_classes() {
 
 // Return number of scopes entered
 int ClassTable::setup_env(Class_ new_class) {
-    // All classes until Object
     Stack<Class_>* stack = new Stack<Class_>(MAX_CLASS_NUM);
     Class_ cur_class = new_class;
-    while(cur_class->get_name() != No_class) {
+    // All classes until Object (Object included)
+    while(cur_class) {
         stack->push(cur_class);
         cur_class = this->get(cur_class->get_parent());
     }
+
+    // for(int i = 0; i < stack->size(); i++) {
+    //     cout << stack->at(i)->get_name()->get_string() << endl;
+    // }
 
     int num_scopes = 0;
     while(!stack->is_empty()) {
@@ -224,8 +228,9 @@ int ClassTable::setup_env(Class_ new_class) {
         for(int i = features->first(); features->more(i); i = features->next(i)) {
             if (features->nth(i)->is_method()) {
                 Method method = {cur_class->get_name(), features->nth(i)->get_name()};
-                Signature sig = features->nth(i)->get_signature();
-                env->M->addid(method, &sig);
+                Signature* sig_ptr = new Signature;
+                *sig_ptr = features->nth(i)->get_signature();
+                env->M->addid(method, sig_ptr);
             } else {
                 // No justification of type of identifier in this stage
                 Symbol type = features->nth(i)->get_type_decl();
@@ -234,6 +239,12 @@ int ClassTable::setup_env(Class_ new_class) {
         }
         num_scopes++;
     }
+
+    // Method method = {IO, out_string};
+    // Signature* sig_ptr = env->M->lookup(method);
+    // cout << "===look up result===" << endl;
+    // (*sig_ptr)->dump(cout, 0);
+    // cout << (*sig_ptr)->len() << endl;
     return num_scopes;
 }
 
@@ -437,15 +448,15 @@ void class__class::semant()
 void method_class::semant()
 {
     env->O->enterscope();
-    // There may be errors here
-    Symbol class_symbol = env->C->get()->get_name();
-    env->O->addid(self, &class_symbol);
-    Signature sig = nil_sig();
+    env->O->addid(self, &SELF_TYPE);
+    // // There may be errors here
+    // Symbol class_symbol = env->C->get()->get_name();
+    // env->O->addid(self, &class_symbol);
 
-    // TODO: Type checking
-    for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
-        // formals->nth(i)->semant(sig);
-    }
+    // // TODO: Type checking
+    // for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+    //     // formals->nth(i)->semant(sig);
+    // }
 
     expr->semant();
     if (!classtable->is_subtype(expr->get_type(), return_type)) {
@@ -453,9 +464,6 @@ void method_class::semant()
         return;
     }
     env->O->exitscope();
-    sig = append_sig(sig, single_sig(return_type));
-    Method method = {env->C->get()->get_name()};
-    env->M->addid(method, &sig);
 
 }
 
@@ -521,7 +529,7 @@ void int_const_class::semant() {
 void object_class::semant() {
     Symbol* name_type = env->O->lookup(name);
     if (name_type == NULL) {
-        classtable->semant_error() << name << " has invalid type\n";
+        classtable->semant_error() << "object " << name << " has invalid type\n";
         type = Object;
         return;
     }

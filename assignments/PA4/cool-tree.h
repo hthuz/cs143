@@ -29,6 +29,7 @@ public:
 
 typedef list_node<SigType*> *Signature;
 
+
 Signature nil_sig();
 Signature single_sig(Symbol s);
 Signature append_sig(Signature s1, Signature s2);
@@ -240,6 +241,7 @@ public:
       for(int i = formals->first(); formals->more(i); i = formals->next(i) ) {
          sig = append_sig(sig, single_sig(formals->nth(i)->get_type_decl()));
       }
+      sig = append_sig(sig, single_sig(return_type));
       return sig;
    }
    Feature copy_Feature();

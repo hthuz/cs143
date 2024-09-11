@@ -45,6 +45,13 @@ public:
         return true;
     return false;
   }
+  // For debugging
+  T at(int index) {
+    return elts[index];
+  }
+  int size() {
+    return num;
+  }
 
 };
 
@@ -80,6 +87,8 @@ public:
   bool has_cycle();
 
   Class__class* get(Symbol type) {
+    // if (type == No_class) 
+    //   return NULL;
     return map->lookup(type);
   };
   // Add Symbol => Class
