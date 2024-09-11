@@ -460,7 +460,14 @@ void method_class::semant()
 
     expr->semant();
     if (!classtable->is_subtype(expr->get_type(), return_type)) {
-        classtable->semant_error() << "method has invalid type\n";
+        classtable->semant_error(env->C->get_filename(), this)
+        << "Inferred return type "
+        << expr->get_type()->get_string()
+        << " of method "
+        << this->get_name()->get_string()
+        << " does not conform to declared return type "
+        << return_type->get_string()
+        << ".\n";
         return;
     }
     env->O->exitscope();
@@ -557,13 +564,20 @@ void dispatch_class::semant() {
     Signature* sig_ptr = env->M->lookup(method);
     Signature sig = *sig_ptr;
     if (sig == NULL) {
-        classtable->semant_error() << "dispatch has invalid signature";
+        classtable->semant_error(env->C->get_filename(), this) << "dispatch has invalid signature";
         type = Object;
         return;
     }
     for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
         if (!classtable->is_subtype(actual->nth(i)->get_type(), sig->nth(i)->get_type())) {
-            classtable->semant_error() << "dispatch violates subtype inheritance";
+            classtable->semant_error(env->C->get_filename(), this)
+            << "In call of method "
+            << name->get_string()
+            << ", type "
+            << actual->nth(i)->get_type()
+            << " of parameter arg does not conform to declared type "
+            << sig->nth(i)->get_type()
+            << ".\n";
             type = Object;
             return;
         }

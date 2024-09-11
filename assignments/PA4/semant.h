@@ -147,6 +147,9 @@ public:
   class__class* get(){
     return cur_class;
   }
+  Symbol get_filename() {
+    return cur_class->get_filename();
+  }
 
 };
 
