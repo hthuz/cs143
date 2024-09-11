@@ -94,7 +94,7 @@ class Formal_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
-   virtual void semant(Signature) = 0;
+   virtual void semant() = 0;
    virtual Symbol get_type_decl() = 0;
 
 #ifdef Formal_EXTRAS
@@ -301,7 +301,7 @@ public:
    Formal copy_Formal();
    Symbol get_type_decl() {return type_decl;}
    void dump(ostream& stream, int n);
-   void semant(Signature sig);
+   void semant();
 
 #ifdef Formal_SHARED_EXTRAS
    Formal_SHARED_EXTRAS

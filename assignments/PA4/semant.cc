@@ -449,14 +449,17 @@ void method_class::semant()
 {
     env->O->enterscope();
     env->O->addid(self, &SELF_TYPE);
-    // // There may be errors here
-    // Symbol class_symbol = env->C->get()->get_name();
-    // env->O->addid(self, &class_symbol);
 
-    // // TODO: Type checking
-    // for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
-    //     // formals->nth(i)->semant(sig);
+    // Method method = {env->C->get()->get_name(), this->name};
+    // Signature* sig_ptr = env->M->lookup(method);
+    // if (sig_ptr == NULL) {
+    //     classtable->semant_error(env->C->get_filename(), this) 
+    //     << "method has invalid type";
+    //     return;
     // }
+    for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
+        formals->nth(i)->semant();
+    }
 
     expr->semant();
     if (!classtable->is_subtype(expr->get_type(), return_type)) {
@@ -493,8 +496,8 @@ void attr_class::semant()
     }
 }
 
-void formal_class::semant(Signature sig) {
-    return;
+void formal_class::semant() {
+    env->O->addid(name, &type_decl);
 }
 // Formals
 // void formal_class::semant(Signature sig)
