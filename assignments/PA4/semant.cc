@@ -233,8 +233,9 @@ int ClassTable::setup_env(Class_ new_class) {
                 env->M->addid(method, sig_ptr);
             } else {
                 // No justification of type of identifier in this stage
-                Symbol type = features->nth(i)->get_type_decl();
-                env->O->addid(features->nth(i)->get_name(), &type);
+                Symbol* type = new Symbol;
+                *type = features->nth(i)->get_type_decl();
+                env->O->addid(features->nth(i)->get_name(), type);
             }
         }
         num_scopes++;
@@ -270,6 +271,7 @@ bool ClassTable::has_cycle() {
         }
         return false;
     }
+    return false;
 }
 
 bool ClassTable::dfs(int node_index, bool* visited, int& num_visited, Stack<Symbol> *rec_stack) {
@@ -446,7 +448,6 @@ void class__class::semant()
         features->nth(i)->semant();
 }
 
-// Features
 void method_class::semant()
 {
     env->O->enterscope();
@@ -481,20 +482,23 @@ void method_class::semant()
 
 void attr_class::semant()
 {
-    if (init == no_expr()){
-        env->O->addid(name, &type_decl);
+    if (name == self) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "'" << name << "'"
+        << " cannot be the name of an attribute.\n";
+        return;
+    }
+    if (init->is_no_expr()){
     } else {
-        // TODO, TYPE checking
-        env->O->enterscope();
         Symbol class_symbol = env->C->get()->get_name();
-        env->O->addid(self, &class_symbol);
         init->semant();
         if (!classtable->is_subtype(init->get_type(), type_decl)) {
-            classtable->semant_error() << "attr has invalid type\n";
+            classtable->semant_error(env->C->get_filename(), this)
+            << "attr " 
+            << name << " : " << type_decl
+            << " has invalid type\n";
             return;
         }
-        env->O->exitscope();
-        env->O->addid(name, &type_decl);
     }
 }
 
@@ -507,13 +511,16 @@ void formal_class::semant() {
 void assign_class::semant() {
     Symbol* id_type = env->O->lookup(name);
     if (id_type == NULL) {
-        classtable->semant_error() << "assign has invalid type\n";
+        classtable->semant_error(env->C->get_filename(), this)
+        << "assign has invalid type\n";
         type = Object;
         return;
     }
     expr->semant();
+    // cout << (*id_type)->get_string() << endl;
     if (!classtable->is_subtype(expr->get_type(), *id_type)) {
-        classtable->semant_error() << "assign has invalid type\n";
+        classtable->semant_error(env->C->get_filename(), this)
+        << "assign has invalid type\n";
         type = Object;
         return;
     }
@@ -543,11 +550,11 @@ void object_class::semant() {
 }
 
 void new__class::semant() {
-    Symbol new_type = type_name;
-    if (new_type == SELF_TYPE)
+    if (type_name == SELF_TYPE){
         type = env->C->get()->get_name();
         return;
-    type = new_type;
+    }
+    type = type_name;
 }
 
 void dispatch_class::semant() {

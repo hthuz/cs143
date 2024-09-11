@@ -109,6 +109,7 @@ typedef class Expression_class *Expression;
 class Expression_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Expression(); }
+   virtual bool is_no_expr() {return false;}
    virtual Expression copy_Expression() = 0;
    virtual void semant() = 0;
 
@@ -848,6 +849,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   bool is_no_expr() {return true;}
    void semant();
 
 #ifdef Expression_SHARED_EXTRAS
