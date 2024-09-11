@@ -71,7 +71,7 @@ private:
   int num_classes;
   void install_basic_classes();
   int get_index_by_type(Symbol type);
-  bool dfs(int, bool*, int*, Stack<Symbol>*);
+  bool dfs(int, bool*, int&, Stack<Symbol>*);
   ostream& error_stream;
   SymbolTable<Symbol, Class__class> *map; // symbol => class
   Symbol types[MAX_CLASS_NUM];

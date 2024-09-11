@@ -255,36 +255,37 @@ void ClassTable::reset_env(int num_scopes) {
     }
 }
 
-// bool ClassTable::has_cycle() {
+bool ClassTable::has_cycle() {
 
-//     bool* visited = new bool[num_classes];
+    bool* visited = new bool[num_classes];
 
-//     int num_visited = 0;
-//     while(num_visited != num_classes) {
-//         for (int node_index = 0; node_index < num_classes; node_index++){
-//             if (visited[node_index])
-//                 continue;
-//             Stack<Symbol>* rec_stack = new Stack<Symbol>(MAX_CLASS_NUM);
-//             if (this->dfs(node_index, visited, &num_visited, &rec_stack))
-//                 return true;
-//         }
-//         return false;
-//     }
-// }
-
-bool ClassTable::dfs(int node_index, bool* visited, int *num_visited, Stack<Symbol> *rec_stack) {
-    Symbol node = types[node_index];
-    if (node == No_class)
+    int num_visited = 0;
+    while(num_visited != num_classes) {
+        for (int node_index = 0; node_index < num_classes; node_index++){
+            if (visited[node_index])
+                continue;
+            Stack<Symbol>* rec_stack = new Stack<Symbol>(num_classes);
+            if (this->dfs(node_index, visited, num_visited, rec_stack))
+                return true;
+        }
         return false;
+    }
+}
+
+bool ClassTable::dfs(int node_index, bool* visited, int& num_visited, Stack<Symbol> *rec_stack) {
+    Symbol node = types[node_index];
+
     rec_stack->push(node);
     visited[node_index] = true;
     num_visited++;
 
-    Symbol parent = get_parent(node);
-    if (visited[node_index])
+    if (node == Object)
         return false;
-    if (rec_stack->has_element(parent))
+    Symbol parent = get_parent(node);
+    int parent_index = get_index_by_type(parent);
+    if (rec_stack->has_element(parent)) {
         return true;
+    }
     
     return dfs(get_index_by_type(parent), visited, num_visited, rec_stack);
 }
@@ -418,10 +419,11 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
-    // if (classtable->has_cycle()) {
-    //     classtable->semant_error() << "classes form a cycle" << endl;
-    //     exit(1);
-    // }
+    if (classtable->has_cycle()) {
+        classtable->semant_error() << "classes form a cycle" << endl;
+	    cerr << "Compilation halted due to static semantic errors." << endl;
+	    exit(1);
+    }
 
     /* some semantic analysis code may go here */
     env = new TypeEnv();
@@ -499,12 +501,6 @@ void attr_class::semant()
 void formal_class::semant() {
     env->O->addid(name, &type_decl);
 }
-// Formals
-// void formal_class::semant(Signature sig)
-// {
-//     env->O->add(name, type_decl);
-//     sig = sig.append(sig, single_list_node<Symbol>(type_decl));
-// }
 
 // Expressions
 
@@ -565,12 +561,16 @@ void dispatch_class::semant() {
 
     Method method = {expr_type, name};
     Signature* sig_ptr = env->M->lookup(method);
-    Signature sig = *sig_ptr;
-    if (sig == NULL) {
-        classtable->semant_error(env->C->get_filename(), this) << "dispatch has invalid signature";
+    if (sig_ptr == NULL) {
+        classtable->semant_error(env->C->get_filename(), this)
+        << "Dispatch to undefined method "
+        << name
+        << ".\n";
         type = Object;
         return;
     }
+
+    Signature sig = *sig_ptr;
     for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
         if (!classtable->is_subtype(actual->nth(i)->get_type(), sig->nth(i)->get_type())) {
             classtable->semant_error(env->C->get_filename(), this)
@@ -597,23 +597,37 @@ void static_dispatch_class::semant() {
         actual->nth(i)->semant();
     }
     if (!classtable->is_subtype(expr->get_type(), type_name)) {
-            classtable->semant_error() << "statis dispatch has invalid type\n";
-            type = Object;
-            return ;
+        classtable->semant_error() << "statis dispatch has invalid type\n";
+        type = Object;
+        return ;
     }
-    // Signature sig = env->M->get(type_name, name);
-    // int i = 0;
-    // for(i = actual->first(); actual->more(i); i = actual->next(i)) {
-    //     if (!classtable->is_subtype(actual->nth(i)->semant(), sig->nth(i))) {
-    //         classtable->semant_error() << "static dispatch violates subtype inheritance";
-    //         return Object;
-    //     }
-    // }
-    // if (sig->nth(i) == SELF_TYPE)
-    //     return expr_type;
-    // return sig->nth(i);
-    type =  Object;
+    Method method = {type_name, name};
+    Signature* sig_ptr = env->M->lookup(method);
+    if (sig_ptr == NULL) {
+        classtable->semant_error(env->C->get_filename(), this) << "static dispatch has invalid signature";
+        type = Object;
+        return;
+    }
 
+    Signature sig = *sig_ptr;
+    for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+        if (!classtable->is_subtype(actual->nth(i)->get_type(), sig->nth(i)->get_type())) {
+            classtable->semant_error(env->C->get_filename(), this)
+            << "In call of method "
+            << name->get_string()
+            << ", type "
+            << actual->nth(i)->get_type()
+            << " of parameter arg does not conform to declared type "
+            << sig->nth(i)->get_type()
+            << ".\n";
+            type = Object;
+            return;
+        }
+    }
+    if (sig->nth(sig->len()-1)->get_type() == SELF_TYPE)
+        type = expr->get_type();
+    else
+        type = sig->nth(sig->len()-1)->get_type();
 }
 
 void cond_class::semant() {
