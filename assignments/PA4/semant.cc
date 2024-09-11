@@ -386,14 +386,14 @@ void method_class::semant()
         // formals->nth(i)->semant(sig);
     }
 
-    Symbol expr_type = expr->semant();
-    if (expr_type == SELF_TYPE) {
-        if (!classtable->is_subtype(expr_type, env->C->get()->get_name())) {
+    expr->semant();
+    if (expr->get_type() == SELF_TYPE) {
+        if (!classtable->is_subtype(expr->get_type(), env->C->get()->get_name())) {
             classtable->semant_error() << "method has invalid type";
             return;
         }
     } else {
-        if (!classtable->is_subtype(expr_type, return_type)) {
+        if (!classtable->is_subtype(expr->get_type(), return_type)) {
             classtable->semant_error() << "method has invalid type";
             return;
         }
@@ -415,8 +415,8 @@ void attr_class::semant()
         env->O->enterscope();
         Symbol class_symbol = env->C->get()->get_name();
         env->O->addid(self, &class_symbol);
-        Symbol init_type = init->semant();
-        if (!classtable->is_subtype(init->semant(), type_decl)) {
+        init->semant();
+        if (!classtable->is_subtype(init->get_type(), type_decl)) {
             classtable->semant_error() << "attr has invalid type";
             return;
         }
@@ -437,50 +437,55 @@ void formal_class::semant(Signature sig) {
 
 // Expressions
 
-Symbol assign_class::semant() {
+void assign_class::semant() {
     Symbol* id_type = env->O->lookup(name);
     if (id_type == NULL) {
         classtable->semant_error() << "assign has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    Symbol expr_type = expr->semant();
-    if (!classtable->is_subtype(expr_type, *id_type)) {
+    expr->semant();
+    if (!classtable->is_subtype(expr->get_type(), *id_type)) {
         classtable->semant_error() << "assign has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return expr_type;
+    type = expr->get_type();
 }
 
-Symbol string_const_class::semant(){
-    return Str;
+void string_const_class::semant(){
+    type = Str;
 }
 
-Symbol bool_const_class::semant() {
-    return Bool;
+void bool_const_class::semant() {
+    type = Bool;
 }
 
-Symbol int_const_class::semant() {
-    return Int;
+void int_const_class::semant() {
+    type = Int;
 }
 
-Symbol object_class::semant() {
+void object_class::semant() {
     Symbol* name_type = env->O->lookup(name);
     if (name_type == NULL) {
         classtable->semant_error() << name << " has invalid type\n";
-        return Object;
+        type = Object;
+        return;
     }
-    return *name_type;
+    type = *name_type;
 }
 
-Symbol new__class::semant() {
+void new__class::semant() {
     Symbol new_type = type_name;
     if (new_type == SELF_TYPE)
-        return env->C->get()->get_name();
-    return new_type;
+        type = env->C->get()->get_name();
+        return;
+    type = new_type;
 }
 
-Symbol dispatch_class::semant() {
-    Symbol expr_type = expr->semant();
+void dispatch_class::semant() {
+    expr->semant();
+    Symbol expr_type = expr->get_type();
     for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
         actual->nth(i)->semant();
     }
@@ -502,18 +507,20 @@ Symbol dispatch_class::semant() {
     // if (sig->nth(i) == SELF_TYPE)
         // return expr_type;
     // return sig->nth(i);
-    return Object;
+    type = Object;
+    return;
 
 }
 
-Symbol static_dispatch_class::semant() {
-    Symbol expr_type = expr->semant();
+void static_dispatch_class::semant() {
+    expr->semant();
     for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
         actual->nth(i)->semant();
     }
-    if (!classtable->is_subtype(expr_type, type_name)) {
+    if (!classtable->is_subtype(expr->get_type(), type_name)) {
             classtable->semant_error() << "statis dispatch has invalid type";
-            return Object;
+            type = Object;
+            return ;
     }
     // Signature sig = env->M->get(type_name, name);
     // int i = 0;
@@ -526,45 +533,46 @@ Symbol static_dispatch_class::semant() {
     // if (sig->nth(i) == SELF_TYPE)
     //     return expr_type;
     // return sig->nth(i);
-    return Object;
+    type =  Object;
 
 }
 
-Symbol cond_class::semant() {
-    Symbol pred_type = pred->semant();
-    Symbol then_type = then_exp->semant();
-    Symbol else_type = else_exp->semant();
-    if (pred_type != Bool)  {
+void cond_class::semant() {
+    pred->semant();
+    then_exp->semant();
+    else_exp->semant();
+    if (pred->get_type() != Bool)  {
         classtable->semant_error() << "cond pred not type bool";
-        return Object;
+        type = Object;
+        return;
     }
 
-    return classtable->join_type(then_type, else_type);
+    type = classtable->join_type(then_exp->get_type(), else_exp->get_type());
 }
 
-Symbol block_class::semant() {
-    int i;
-    for (i = body->first(); body->more(i); i = body->next(i)) {
+void block_class::semant() {
+    for (int i = body->first(); body->more(i); i = body->next(i)) {
         body->nth(i)->semant();
     }
-    return body->nth(i)->semant();
+    type = body->nth(body->len()-1)->get_type();
 }
 
-Symbol let_class::semant() {
+void let_class::semant() {
     if (type_decl == SELF_TYPE)
         type_decl = env->C->get()->get_name();
     if (init != no_expr()) {
-        Symbol init_type = init->semant();
-        if (classtable->is_subtype(init_type, type_decl)) {
+        init->semant();
+        if (classtable->is_subtype(init->get_type(), type_decl)) {
             classtable->semant_error() << "let has invalid type";
-            return Object;
+            type = Object;
+            return;
         }
     }
     env->O->enterscope();
     env->O->addid(identifier, &type_decl);
-    Symbol body_type = body->semant();
+    body->semant();
     env->O->exitscope();
-    return body_type;
+    type = body->get_type();
 }
 
 // Symbol typcase_class::semant() {
@@ -580,8 +588,8 @@ Symbol let_class::semant() {
 //     }
 //     return case_type;
 // }
-Symbol typcase_class::semant() {
-    return Object;
+void typcase_class::semant() {
+    type = Object;
 }
 
 
@@ -594,124 +602,163 @@ Symbol typcase_class::semant() {
 //     return NULL;
 // }
 
-Symbol loop_class::semant() {
-    Symbol pred_type = pred->semant();
-    Symbol body_type = body->semant();
-    if (pred_type != Bool) {
+void loop_class::semant() {
+    pred->semant();
+    body->semant();
+    if (pred->get_type() != Bool) {
         classtable->semant_error() << "loop pred not type bool";
-        return Object;
+        type = Object;
+        return;
     }
-    return Object;
+    type = Object;
+    return;
 }
 
-Symbol isvoid_class::semant() {
+void isvoid_class::semant() {
     e1->semant();
-    return Bool;
+    type = Bool;
+    return;
 }
 
-Symbol neg_class::semant() {
-    if (e1->semant() != Bool) {
+void neg_class::semant() {
+    e1->semant();
+    if (e1->get_type() != Bool) {
         classtable->semant_error() << "neg expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Bool;
+    type = Bool;
+    return;
 }
 
-Symbol plus_class::semant() {
-    if (e1->semant() != Int) {
+void plus_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "plus expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "plus expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Int;
+    type = Int;
+    return;
 }
 
-Symbol sub_class::semant() {
-    if (e1->semant() != Int) {
+void sub_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "sub expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "sub expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Int;
+    type = Int;
+    return;
 }
 
-Symbol mul_class::semant() {
-    if (e1->semant() != Int) {
+void mul_class::semant() {
+    e1->semant();
+    e2->semant();
+
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "mul expr has invalid type";
-        return Object;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "mul expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Int;
+    type = Int;
+    return;
 }
 
-Symbol divide_class::semant() {
-    if (e1->semant() != Int) {
+void divide_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "div expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "div expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Int;
+    type = Int;
 }
 
-Symbol lt_class::semant() {
-    if (e1->semant() != Int) {
+void lt_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "lt expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "lt expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Bool;
+    type = Bool;
+    return;
 }
 
-Symbol eq_class::semant() {
-    if (e1->semant() != Int) {
+void eq_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "eq expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "eq expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Bool;
+    type = Bool;
 }
 
-Symbol leq_class::semant() {
-    if (e1->semant() != Int) {
+void leq_class::semant() {
+    e1->semant();
+    e2->semant();
+    if (e1->get_type() != Int) {
         classtable->semant_error() << "leq expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    if (e2->semant() != Int) {
+    if (e2->get_type() != Int) {
         classtable->semant_error() << "leq expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Bool;
+    type = Bool;
 }
 
 // aka not
-Symbol comp_class::semant() {
-    if (e1->semant() != Bool) {
+void comp_class::semant() {
+    e1->semant();
+    if (e1->get_type() != Bool) {
         classtable->semant_error() << "not expr has invalid type";
-        return Object;
+        type = Object;
+        return;
     }
-    return Bool;
+    type = Bool;
 }
 
-Symbol no_expr_class::semant() {
-    return Object;
+void no_expr_class::semant() {
+    type = Object;
 }
 
 // Symbol eq_class::semant() {
