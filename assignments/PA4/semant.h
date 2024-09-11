@@ -36,6 +36,9 @@ public:
   T pop() {
     return elts[--num];
   }
+  bool is_empty() {
+    return num == 0;
+  }
   bool has_element(T elt) {
     for (int i = 0; i < num; i++) 
       if (elts[i] == elt)
@@ -72,6 +75,8 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
+  int setup_env(Class_ new_class);
+  void reset_env(int num_scopes);
   bool has_cycle();
 
   Class__class* get(Symbol type) {
@@ -112,6 +117,8 @@ public:
 
 // (Class, method) => signature (arguments and return type)
 class MethodEnv : public SymbolTable<Method, Signature>{
+public:
+  Signature* lookup(Method m);
 };
 
 // Idetifier => Type

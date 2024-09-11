@@ -29,6 +29,10 @@ public:
 
 typedef list_node<SigType*> *Signature;
 
+Signature nil_sig();
+Signature single_sig(Symbol s);
+Signature append_sig(Signature s1, Signature s2);
+
 // define the class for phylum
 // define simple phylum - Program
 typedef class Program_class *Program;
@@ -54,6 +58,7 @@ public:
    virtual void semant() = 0;
    virtual Symbol get_name() = 0;
    virtual Symbol get_parent() = 0;
+   virtual Features get_features() = 0;
 
 #ifdef Class__EXTRAS
    Class__EXTRAS
@@ -69,6 +74,11 @@ public:
    tree_node *copy()		 { return copy_Feature(); }
    virtual Feature copy_Feature() = 0;
    virtual void semant() = 0;
+   virtual Symbol get_name() = 0;
+   virtual Symbol get_type_decl() = 0;
+   virtual Symbol get_return_type() = 0;
+   virtual Signature get_signature() = 0;
+   virtual bool is_method() = 0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -84,6 +94,7 @@ public:
    tree_node *copy()		 { return copy_Formal(); }
    virtual Formal copy_Formal() = 0;
    virtual void semant(Signature) = 0;
+   virtual Symbol get_type_decl() = 0;
 
 #ifdef Formal_EXTRAS
    Formal_EXTRAS
@@ -191,6 +202,9 @@ public:
    Symbol get_parent(){
       return parent;
    }
+   Features get_features() {
+      return features;
+   }
 
 #ifdef Class__SHARED_EXTRAS
    Class__SHARED_EXTRAS
@@ -214,6 +228,19 @@ public:
       formals = a2;
       return_type = a3;
       expr = a4;
+   }
+   bool is_method() { return true;}
+   Symbol get_name() {return name; }
+   // PlaceHolders
+   Symbol get_type_decl() {return NULL;}
+
+   Symbol get_return_type()  {return return_type;}
+   Signature get_signature() {
+      Signature sig = nil_sig();
+      for(int i = formals->first(); formals->more(i); i = formals->next(i) ) {
+         sig = append_sig(sig, single_sig(formals->nth(i)->get_type_decl()));
+      }
+      return sig;
    }
    Feature copy_Feature();
    void dump(ostream& stream, int n);
@@ -240,6 +267,12 @@ public:
       type_decl = a2;
       init = a3;
    }
+   Symbol get_name() {return name;}
+   Symbol get_type_decl() {return type_decl;}
+   bool is_method() {return false;}
+   // Place holders
+   Symbol get_return_type() {return NULL;}
+   Signature get_signature() {return NULL;}
    Feature copy_Feature();
    void dump(ostream& stream, int n);
    void semant();
@@ -264,6 +297,7 @@ public:
       type_decl = a2;
    }
    Formal copy_Formal();
+   Symbol get_type_decl() {return type_decl;}
    void dump(ostream& stream, int n);
    void semant(Signature sig);
 
