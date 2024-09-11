@@ -49,7 +49,11 @@ public:
 typedef struct Method {
   Symbol class_name;
   Symbol method_name;
+  bool operator==(const Method& other) const{
+    return class_name == other.class_name && method_name == other.method_name;
+  }
 } Method;
+
 
 class ClassTable {
 private:

@@ -12,7 +12,22 @@
 #include "tree.h"
 #include "cool-tree.handcode.h"
 
-typedef list_node<Symbol> *Signature;
+class SigType : public tree_node {
+private:
+   Symbol type;
+public:
+   SigType(Symbol t) {type = t;};
+   void set_type(Symbol t) { type = t;}
+   Symbol get_type() {return type;}
+   // placeholders
+   tree_node *copy() {return NULL;};
+   void dump(ostream& stream, int n) {
+      stream << type->get_string() << endl;
+      // type->print(stream);
+   };
+};
+
+typedef list_node<SigType*> *Signature;
 
 // define the class for phylum
 // define simple phylum - Program

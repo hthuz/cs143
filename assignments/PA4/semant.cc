@@ -87,6 +87,7 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0), error_stream(cerr) {
     /* Fill this in */
     num_classes = 0;
     map = new SymbolTable<Symbol, Class__class>;
+    map->enterscope();
     install_basic_classes();
     for(int i = classes->first(); classes->more(i); i = classes->next(i))
         add(classes->nth(i)->get_name(), classes->nth(i));
@@ -302,12 +303,52 @@ ostream& ClassTable::semant_error()
 
 TypeEnv *env;
 ClassTable *classtable;
+
+Signature nil_sig() {
+    return new nil_node<SigType*>();
+}
+
+Signature single_sig(Symbol s) {
+    return new single_list_node<SigType*>(new SigType(s));
+}
+
+Signature append_sig(Signature s1, Signature s2) {
+    return new append_node<SigType*>(s1, s2);
+}
+
+void mytest() {
+    Signature sig =  nil_sig();
+    sig = append_sig(sig, single_sig(Object));
+    sig = append_sig(sig, single_sig(Int));
+    sig->dump(cout, 0);
+
+    int i = 0;
+    for (i = sig->first(); sig->more(i); i = sig->next(i)) {
+        cout << sig->nth(i)->get_type()->get_string() << " ";
+    }
+    cout << endl;
+    cout << sig->nth(sig->len()-1)->get_type()->get_string() << endl;
+    // cout << sig->nth(i)->get_type()->get_string();
+
+    // SymbolTable<Method, Signature>* map = new SymbolTable<Method, Signature>;
+    // map->enterscope();
+    // Method method = {Object, Int};
+    // Method method2 = {Object, Object};
+    // map->addid(method, &sig);
+
+
+}
+
 void program_class::semant()
 {
     initialize_constants();
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
+    mytest();
+    cout << "=====\n";
+    return;
+
     // if (classtable->has_cycle()) {
     //     classtable->semant_error() << "classes form a cycle" << endl;
     //     exit(1);
