@@ -328,7 +328,6 @@ void mytest() {
     }
     cout << endl;
     cout << sig->nth(sig->len()-1)->get_type()->get_string() << endl;
-    // cout << sig->nth(i)->get_type()->get_string();
 
     // SymbolTable<Method, Signature>* map = new SymbolTable<Method, Signature>;
     // map->enterscope();
@@ -345,9 +344,6 @@ void program_class::semant()
 
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
-    mytest();
-    cout << "=====\n";
-    return;
 
     // if (classtable->has_cycle()) {
     //     classtable->semant_error() << "classes form a cycle" << endl;
@@ -380,8 +376,11 @@ void class__class::semant()
 void method_class::semant()
 {
     env->O->enterscope();
-    env->O->add(self, env->C->get()->get_name());
-    // Signature sig = new list_node<Symbol>;
+    // There may be errors here
+    Symbol class_symbol = env->C->get()->get_name();
+    env->O->addid(self, &class_symbol);
+    Signature sig = nil_sig();
+
     // TODO: Type checking
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
         // formals->nth(i)->semant(sig);
@@ -400,9 +399,9 @@ void method_class::semant()
         }
     }
     env->O->exitscope();
-    // sig = sig->append(sig, single_list_node<Symbol>(return_type));
-    // Signature sig;
-    // env->M->add(env->C->get()->get_name(), name, sig);
+    sig = append_sig(sig, single_sig(return_type));
+    Method method = {env->C->get()->get_name()};
+    env->M->addid(method, &sig);
 
     return;
 }
@@ -410,18 +409,19 @@ void method_class::semant()
 void attr_class::semant()
 {
     if (init == no_expr()){
-        env->O->add(name, type_decl);
+        env->O->addid(name, &type_decl);
     } else {
         // TODO, TYPE checking
         env->O->enterscope();
-        env->O->add(self, env->C->get()->get_name());
+        Symbol class_symbol = env->C->get()->get_name();
+        env->O->addid(self, &class_symbol);
         Symbol init_type = init->semant();
         if (!classtable->is_subtype(init->semant(), type_decl)) {
             classtable->semant_error() << "attr has invalid type";
             return;
         }
         env->O->exitscope();
-        env->O->add(name, type_decl);
+        env->O->addid(name, &type_decl);
     }
 }
 
@@ -438,9 +438,13 @@ void formal_class::semant(Signature sig) {
 // Expressions
 
 Symbol assign_class::semant() {
-    Symbol id_type = env->O->get(name);
+    Symbol* id_type = env->O->lookup(name);
+    if (id_type == NULL) {
+        classtable->semant_error() << "assign has invalid type";
+        return Object;
+    }
     Symbol expr_type = expr->semant();
-    if (!classtable->is_subtype(expr_type, id_type)) {
+    if (!classtable->is_subtype(expr_type, *id_type)) {
         classtable->semant_error() << "assign has invalid type";
         return Object;
     }
@@ -460,12 +464,12 @@ Symbol int_const_class::semant() {
 }
 
 Symbol object_class::semant() {
-    Symbol name_type = env->O->get(name);
+    Symbol* name_type = env->O->lookup(name);
     if (name_type == NULL) {
         classtable->semant_error() << name << " has invalid type\n";
         return Object;
     }
-    return name_type;
+    return *name_type;
 }
 
 Symbol new__class::semant() {
@@ -498,7 +502,7 @@ Symbol dispatch_class::semant() {
     // if (sig->nth(i) == SELF_TYPE)
         // return expr_type;
     // return sig->nth(i);
-    return NULL;
+    return Object;
 
 }
 
@@ -557,7 +561,7 @@ Symbol let_class::semant() {
         }
     }
     env->O->enterscope();
-    env->O->add(identifier, type_decl);
+    env->O->addid(identifier, &type_decl);
     Symbol body_type = body->semant();
     env->O->exitscope();
     return body_type;

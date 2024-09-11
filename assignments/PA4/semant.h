@@ -110,80 +110,12 @@ public:
 
 
 
-class MethodEnv{
-private:
-
-public:
-  void enterscope() {
-
-  };
-  void exitscope() {
-
-  };
+// (Class, method) => signature (arguments and return type)
+class MethodEnv : public SymbolTable<Method, Signature>{
 };
-// class MethodEnv{
-// private:
-//   SymbolTable<Method, Signature> *map;
-// public:
-//   MethodEnv() {
-//     map = new SymbolTable<Method, Signature>();
-//   }
-//   void add(Symbol class_name, Symbol method_name, Signature sig) {
-//     Method method = {class_name, method_name};
-//     map->addid(method, &sig);
-//   }
-//   bool has(Symbol class_name, Symbol method_name) {
-//     Method method = {class_name, method_name};
-//     // TODO comparsion of signature
-//     // return map->lookup(method) != NULL;
-//     return false;
-//   }
-//   void enterscope() {
-//     map->enterscope();
-//   }
-//   void exitscope() {
-//     map->exitscope();
-//   }
-//   // TODO: to be implemented
-//   Signature get(Symbol class_name, Symbol method_name) {
-//     Method method = {class_name, method_name};
-//     // Signature* sig = map->lookup(method);
-//     // if (sig == NULL)
-//     //   return NULL;
-//     return NULL;
-//   };
 
-// };
-
-class ObjectEnv{
-private:
-  SymbolTable<Symbol, Symbol> *map; // Identifier => Type
-
-public:
-  ObjectEnv() {
-    map = new SymbolTable<Symbol, Symbol>();
-  }
-  void add(Symbol identifier, Symbol type){
-    map->addid(identifier, &type);
-  }
-  // If var `identifier` has type 
-  bool has(Symbol identifier) {
-    return map->lookup(identifier) != NULL;
-  }
-
-  void enterscope() {
-    map->enterscope();
-  }
-  void exitscope() {
-    map->exitscope();
-  }
-  Symbol get(Symbol identifier){
-    Symbol* type = map->lookup(identifier);
-    if (type == NULL)
-      return NULL;
-    return *type;
-  }
-
+// Idetifier => Type
+class ObjectEnv : public SymbolTable<Symbol, Symbol>{
 };
 
 class ClassEnv{
