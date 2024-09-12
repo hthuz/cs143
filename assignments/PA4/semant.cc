@@ -350,10 +350,14 @@ int ClassTable::get_index_by_type(Symbol type) {
 }
 
 bool ClassTable::is_subtype(Symbol type, Symbol other_type) {
+    if (other_type == SELF_TYPE)
+        if(type == SELF_TYPE)
+            return true;
+        else
+            return false;
     if (type == SELF_TYPE) 
         type = env->C->get()->get_name();
-    if (other_type == SELF_TYPE) 
-        other_type = env->C->get()->get_name();
+
     Symbol cur = type;
     while(cur != No_class) {
         if (cur == other_type) 
@@ -488,6 +492,12 @@ void program_class::semant()
     env = new TypeEnv();
     for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
         int num_scopes = classtable->setup_env(classes->nth(i)); 
+        if (classes->nth(i)->get_name() == SELF_TYPE) {
+            classtable->semant_error(classes->nth(i)->get_filename(), classes->nth(i))
+            << "Redefinition of basic class "
+            << classes->nth(i)->get_name()->get_string()
+            << ".\n";
+        }
         if (classtable->errors()) {
 	        cerr << "Compilation halted due to static semantic errors." << endl;
 	        exit(1);
@@ -592,6 +602,22 @@ void attr_class::semant()
 }
 
 void formal_class::semant() {
+    if (type_decl == SELF_TYPE) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "Formal parameter "
+        << name->get_string()
+        << "cannot have type "
+        << type_decl->get_string()
+        << ".\n";
+        return;
+    }
+    if (env->O->lookup(name) != NULL) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "Formal parameter "
+        << name->get_string()
+        << " is multiply defined.\n";
+        return;
+    }
     env->O->addid(name, &type_decl);
 }
 
