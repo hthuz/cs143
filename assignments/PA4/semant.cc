@@ -506,6 +506,18 @@ void program_class::semant()
 void class__class::semant()
 {
     env->C->set(this);
+
+    if (this->get_parent() == Int ||
+        this->get_parent() == Bool ||
+        this->get_parent() == Str) {
+            classtable->semant_error(get_filename(), this) 
+            << "Class "
+            << name->get_string()
+            << " cannot inherit class "
+            << this->get_parent()->get_string()
+            << ".\n";
+        return;
+    }
     for (int i = features->first(); features->more(i); i = features->next(i))
         features->nth(i)->semant();
 }
