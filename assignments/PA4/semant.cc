@@ -216,15 +216,11 @@ int ClassTable::setup_env(Class_ new_class) {
         cur_class = this->get(cur_class->get_parent());
     }
 
-    // for(int i = 0; i < stack->size(); i++) {
-    //     cout << stack->at(i)->get_name()->get_string() << endl;
-    // }
 
-    int num_scopes = 0;
-    while(!stack->is_empty()) {
-        cur_class = stack->pop();
-        env->O->enterscope();
-        env->M->enterscope();
+    // Setup method env for all classes
+    env->M->enterscope();
+    for(int i = 0; i < this->num_classes; i++) {
+        cur_class = this->get(types[i]);
         Features features = cur_class->get_features();
         for(int i = features->first(); features->more(i); i = features->next(i)) {
             if (features->nth(i)->is_method()) {
@@ -232,7 +228,19 @@ int ClassTable::setup_env(Class_ new_class) {
                 Signature* sig_ptr = new Signature;
                 *sig_ptr = features->nth(i)->get_signature();
                 env->M->addid(method, sig_ptr);
-            } else {
+            }
+        }
+    }
+
+
+    // Setup object env for inheritance classes
+    int num_scopes = 0;
+    while(!stack->is_empty()) {
+        cur_class = stack->pop();
+        env->O->enterscope();
+        Features features = cur_class->get_features();
+        for(int i = features->first(); features->more(i); i = features->next(i)) {
+            if (!features->nth(i)->is_method()) {
                 // Illegal to redefine attribute
                 if (env->O->lookup(features->nth(i)->get_name()) != NULL) {
                     this->semant_error(env->C->get_filename(), features->nth(i))
@@ -241,7 +249,6 @@ int ClassTable::setup_env(Class_ new_class) {
                     << " is an attribute of an inherited class.\n";
                     return -1;
                 }
- 
 
                 Symbol* type = new Symbol;
                 *type = features->nth(i)->get_type_decl();
@@ -250,6 +257,7 @@ int ClassTable::setup_env(Class_ new_class) {
         }
         num_scopes++;
     }
+    
 
     // Method method = {IO, out_string};
     // Signature* sig_ptr = env->M->lookup(method);
@@ -262,7 +270,6 @@ int ClassTable::setup_env(Class_ new_class) {
 void ClassTable::reset_env(int num_scopes) {
     for (int i = 0; i < num_scopes; i++) {
         env->O->exitscope();
-        env->M->exitscope();
     }
 }
 
@@ -433,8 +440,15 @@ void program_class::semant()
 
     if (classtable->has_cycle()) {
         classtable->semant_error() << "classes form a cycle" << endl;
-	    cerr << "Compilation halted due to static semantic errors." << endl;
-	    exit(1);
+    }
+
+    if (!classtable->is_defined_type(Main)) {
+        classtable->semant_error() << "Class Main is not defined." << endl;
+    }
+
+    if (classtable->errors()) {
+	cerr << "Compilation halted due to static semantic errors." << endl;
+	exit(1);
     }
 
     /* some semantic analysis code may go here */
@@ -700,12 +714,17 @@ void block_class::semant() {
 }
 
 void let_class::semant() {
-    if (type_decl == SELF_TYPE)
-        type_decl = env->C->get()->get_name();
-    if (init != no_expr()) {
+    if (identifier == self) {
+        classtable->semant_error(env->C->get_filename(), this)
+        << "'" << identifier->get_string() << "'"
+        << " cannot be bound in a 'let' expression.\n";
+        // type = Object;
+        // return;
+    }
+    if (!init->is_no_expr()) {
         init->semant();
-        if (classtable->is_subtype(init->get_type(), type_decl)) {
-            classtable->semant_error() << "let has invalid type\n";
+        if (!classtable->is_subtype(init->get_type(), type_decl)) {
+            classtable->semant_error(env->C->get_filename(), this) << "let has invalid type\n";
             type = Object;
             return;
         }
