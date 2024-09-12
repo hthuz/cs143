@@ -350,11 +350,12 @@ int ClassTable::get_index_by_type(Symbol type) {
 }
 
 bool ClassTable::is_subtype(Symbol type, Symbol other_type) {
-    if (other_type == SELF_TYPE)
+    if (other_type == SELF_TYPE) {
         if(type == SELF_TYPE)
             return true;
         else
             return false;
+    }
     if (type == SELF_TYPE) 
         type = env->C->get()->get_name();
 
@@ -814,12 +815,24 @@ void let_class::semant() {
 
 void typcase_class::semant() {
     expr->semant();
+    SymbolTable<Symbol, bool>* all_types = new SymbolTable<Symbol, bool>;
+    all_types->enterscope();
     Symbol case_type = NULL;
+    bool exist = true;
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
         env->O->enterscope();
 
         Symbol* type_decl = new Symbol;
         *type_decl = cases->nth(i)->get_type_decl();
+        // check for branch of the same type_decl
+        if (all_types->lookup(*type_decl) != NULL) {
+            classtable->semant_error(env->C->get_filename(), this) 
+            << "Duplicate branch "
+            << (*type_decl)->get_string()
+            << " in case statement.\n";
+        }
+        all_types->addid(*type_decl, &exist);
+
         env->O->addid(cases->nth(i)->get_name(), type_decl);
 
         Expression expr = cases->nth(i)->get_expr();
