@@ -426,6 +426,29 @@ bool ClassTable::is_subtype(Symbol type, Symbol other_type) {
 }
 
 
+Symbol ClassTable::join_type(Symbol type, Symbol other_type){
+    if (!type)
+        return other_type;
+    if (!other_type)
+        return type;
+    if (type == SELF_TYPE && other_type == SELF_TYPE)
+        return SELF_TYPE;
+
+    if (type == SELF_TYPE)
+        type = env->C->get()->get_name();
+    if (other_type == SELF_TYPE)
+        other_type = env->C->get()->get_name();
+
+    Symbol cur = type;
+    while(true) {
+        if (is_subtype(other_type, cur))
+            return cur;
+        cur = get_parent(cur);
+    }
+    printf("join_type error\n");
+    return NULL;
+  }
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -745,7 +768,7 @@ void dispatch_class::semant() {
         expr_type = env->C->get()->get_name();
 
     Method method = {expr_type, name};
-    // cout << expr_type->get_string() << " " << name->get_string() << endl;
+    // cout << env->C->get()->get_name()->get_string() << " " << expr_type->get_string() << " " << name->get_string() << endl;
     Signature* sig_ptr = env->M->lookup(method);
     if (sig_ptr == NULL) {
         classtable->semant_error(env->C->get_filename(), this)

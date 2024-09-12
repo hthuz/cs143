@@ -106,22 +106,7 @@ public:
   // Whether type is a subtype of other_type
   bool is_subtype(Symbol type, Symbol other_type);
   // the least type C such that A < C and B < C
-  Symbol join_type(Symbol type, Symbol other_type) {
-
-    if (!type)
-      return other_type;
-    if (!other_type)
-      return type;
-
-    Symbol cur = type;
-    while(true) {
-      if (is_subtype(other_type, cur))
-        return cur;
-      cur = get_parent(cur);
-    }
-    printf("join_type error\n");
-    return NULL;
-  }
+  Symbol join_type(Symbol type, Symbol other_type);
 };
 
 
