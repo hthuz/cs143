@@ -282,7 +282,10 @@ void ClassTable::setup_method_env() {
                 Signature parent_sig = *parent_sig_ptr;
                 // Check if signatures are the same
                 if (cur_sig->len() != parent_sig->len()) {
-                    this->semant_error(cur_class->get_filename(), cur_class) << "redefined method invalid";
+                    this->semant_error(cur_class->get_filename(), cur_class)
+                    << "Incompatible number of formal parameters in redefined method "
+                    << cur_method.method_name
+                    << ".\n";
                     return;
                 }
                 for(int k = cur_sig->first(); cur_sig->more(k); k = cur_sig->next(k)) {
