@@ -82,8 +82,9 @@ public:
   ostream& semant_error();
   ostream& semant_error(Class_ c);
   ostream& semant_error(Symbol filename, tree_node *t);
-  int setup_env(Class_ new_class);
-  void reset_env(int num_scopes);
+  int setup_object_env(Class_ new_class);
+  void setup_method_env();
+  void reset_object_env(int num_scopes);
   bool has_cycle();
   bool has_undefined_class();
   bool is_defined_type(Symbol type);

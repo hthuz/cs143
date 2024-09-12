@@ -238,18 +238,9 @@ bool ClassTable::has_undefined_class() {
     }
     return false;
 }
-// Return number of scopes entered
-// Return -1 if any semantic erros happen
-int ClassTable::setup_env(Class_ new_class) {
-    Stack<Class_>* stack = new Stack<Class_>(MAX_CLASS_NUM);
-    Class_ cur_class = new_class;
-    // All classes until Object (Object included)
-    while(cur_class) {
-        stack->push(cur_class);
-        cur_class = this->get(cur_class->get_parent());
-    }
 
-
+void ClassTable::setup_method_env() {
+    Class_ cur_class;
     // Setup method env for all classes
     env->M->enterscope();
     for(int i = 0; i < this->num_classes; i++) {
@@ -264,6 +255,21 @@ int ClassTable::setup_env(Class_ new_class) {
             }
         }
     }
+
+}
+
+// Return number of scopes entered
+// Return -1 if any semantic erros happen
+int ClassTable::setup_object_env(Class_ new_class) {
+    Stack<Class_>* stack = new Stack<Class_>(MAX_CLASS_NUM);
+    Class_ cur_class = new_class;
+    // All classes until Object (Object included)
+    while(cur_class) {
+        stack->push(cur_class);
+        cur_class = this->get(cur_class->get_parent());
+    }
+
+
 
 
     // Setup object env for inheritance classes
@@ -300,7 +306,7 @@ int ClassTable::setup_env(Class_ new_class) {
     return num_scopes;
 }
 
-void ClassTable::reset_env(int num_scopes) {
+void ClassTable::reset_object_env(int num_scopes) {
     for (int i = 0; i < num_scopes; i++) {
         env->O->exitscope();
     }
@@ -434,7 +440,7 @@ Signature append_sig(Signature s1, Signature s2) {
 Signature* MethodEnv::lookup(Method method) {
     Symbol cur_class_name = method.class_name;
     Method new_method = method;
-    while (cur_class_name != Object) {
+    do {
         new_method.class_name = cur_class_name;
         Signature* sig_ptr = SymbolTable<Method, Signature>::lookup(new_method);
         if (sig_ptr != NULL) {
@@ -442,7 +448,7 @@ Signature* MethodEnv::lookup(Method method) {
         }
         // keep searching
         cur_class_name = classtable->get_parent(cur_class_name);
-    }
+    } while(cur_class_name != No_class);
     return NULL;
 }
 
@@ -491,8 +497,9 @@ void program_class::semant()
 
     /* some semantic analysis code may go here */
     env = new TypeEnv();
+    classtable->setup_method_env();
     for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        int num_scopes = classtable->setup_env(classes->nth(i)); 
+        int num_scopes = classtable->setup_object_env(classes->nth(i)); 
         if (classes->nth(i)->get_name() == SELF_TYPE) {
             classtable->semant_error(classes->nth(i)->get_filename(), classes->nth(i))
             << "Redefinition of basic class "
@@ -505,7 +512,7 @@ void program_class::semant()
         }
 
         classes->nth(i)->semant();
-        classtable->reset_env(num_scopes);
+        classtable->reset_object_env(num_scopes);
     }
 
     if (classtable->errors()) {
