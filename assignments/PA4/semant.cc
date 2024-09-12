@@ -91,8 +91,15 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0), error_stream(cerr) {
     map = new SymbolTable<Symbol, Class__class>;
     map->enterscope();
     install_basic_classes();
-    for(int i = classes->first(); classes->more(i); i = classes->next(i))
+    for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
+        if (this->get(classes->nth(i)->get_name()) != NULL) {
+            this->semant_error(classes->nth(i)->get_filename(), classes->nth(i)) 
+            << "Class "
+            << classes->nth(i)->get_name()->get_string()
+            << " was previously defined.\n";
+        }
         add(classes->nth(i)->get_name(), classes->nth(i));
+    }
 }
 
 void ClassTable::install_basic_classes() {
@@ -205,6 +212,32 @@ void ClassTable::install_basic_classes() {
 
 }
 
+
+bool ClassTable::is_defined_type(Symbol type) {
+    if (type == No_class) 
+        return true;
+    for(int i = 0; i < num_classes; i++)
+        if (types[i] == type)
+            return true;
+    return false;
+}
+
+// For example, class A inherits B, but B is not defined
+bool ClassTable::has_undefined_class() {
+    for(int i = 0; i < num_classes; i++) {
+        Class_ cur_class = this->get(types[i]);
+        if (!classtable->is_defined_type(cur_class->get_parent()))  {
+            classtable->semant_error(cur_class->get_filename(), cur_class) 
+            << "Class " 
+            << cur_class->get_name()->get_string()
+            << " inherits from an undefined class "
+            << cur_class->get_parent()->get_string()
+            << ".\n";
+            return true;
+        }
+    }
+    return false;
+}
 // Return number of scopes entered
 // Return -1 if any semantic erros happen
 int ClassTable::setup_env(Class_ new_class) {
@@ -438,7 +471,7 @@ void program_class::semant()
     /* ClassTable constructor may do some semantic analysis */
     classtable = new ClassTable(classes);
 
-    if (classtable->has_cycle()) {
+    if (!classtable->has_undefined_class() && classtable->has_cycle()) {
         classtable->semant_error() << "classes form a cycle" << endl;
     }
 

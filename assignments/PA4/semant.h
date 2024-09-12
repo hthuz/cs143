@@ -85,12 +85,8 @@ public:
   int setup_env(Class_ new_class);
   void reset_env(int num_scopes);
   bool has_cycle();
-  bool is_defined_type(Symbol type) {
-    for(int i = 0; i < num_classes; i++)
-      if (types[i] == type)
-        return true;
-    return false;
-  }
+  bool has_undefined_class();
+  bool is_defined_type(Symbol type);
 
   Class__class* get(Symbol type) {
     // if (type == No_class) 
