@@ -535,15 +535,10 @@ void class__class::semant()
 void method_class::semant()
 {
     env->O->enterscope();
-    env->O->addid(self, &SELF_TYPE);
+    Symbol* self_type = new Symbol;
+    *self_type = SELF_TYPE;
+    env->O->addid(self, self_type);
 
-    // Method method = {env->C->get()->get_name(), this->name};
-    // Signature* sig_ptr = env->M->lookup(method);
-    // if (sig_ptr == NULL) {
-    //     classtable->semant_error(env->C->get_filename(), this) 
-    //     << "method has invalid type";
-    //     return;
-    // }
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
         formals->nth(i)->semant();
     }
@@ -618,7 +613,9 @@ void formal_class::semant() {
         << " is multiply defined.\n";
         return;
     }
-    env->O->addid(name, &type_decl);
+    Symbol* symbol = new Symbol;
+    *symbol = type_decl;
+    env->O->addid(name, symbol);
 }
 
 // Expressions
@@ -814,32 +811,27 @@ void let_class::semant() {
     type = body->get_type();
 }
 
-// Symbol typcase_class::semant() {
-//     Symbol expr_type = expr->semant();
 
-//     Symbol case_type = NULL;
-//     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
-//         branch_class* branch = dynamic_cast<branch_class*>(cases->nth(i));
-//         if (!branch) {
-//             printf("dynamic cast fail\n");
-//         }
-//         branch->semant(&case_type);
-//     }
-//     return case_type;
-// }
 void typcase_class::semant() {
-    type = Object;
+    expr->semant();
+    Symbol case_type = NULL;
+    for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+        env->O->enterscope();
+
+        Symbol* type_decl = new Symbol;
+        *type_decl = cases->nth(i)->get_type_decl();
+        env->O->addid(cases->nth(i)->get_name(), type_decl);
+
+        Expression expr = cases->nth(i)->get_expr();
+        expr->semant();
+
+        env->O->exitscope();
+        case_type = classtable->join_type(case_type, expr->get_type());
+    }
+    type = case_type;
 }
 
 
-// // Modify case_type
-// Symbol branch_class::semant(Symbol* case_type)  {
-//     env->O->enterscope();
-//     env->O->add(branch->name, branch->type_decl);
-//     case_type = classtable->join_type(*case_type, branch->expr->semant());
-//     env->O->exitscope();
-//     return NULL;
-// }
 
 void loop_class::semant() {
     pred->semant();
