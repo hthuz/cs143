@@ -206,6 +206,7 @@ void ClassTable::install_basic_classes() {
 }
 
 // Return number of scopes entered
+// Return -1 if any semantic erros happen
 int ClassTable::setup_env(Class_ new_class) {
     Stack<Class_>* stack = new Stack<Class_>(MAX_CLASS_NUM);
     Class_ cur_class = new_class;
@@ -232,7 +233,16 @@ int ClassTable::setup_env(Class_ new_class) {
                 *sig_ptr = features->nth(i)->get_signature();
                 env->M->addid(method, sig_ptr);
             } else {
-                // No justification of type of identifier in this stage
+                // Illegal to redefine attribute
+                if (env->O->lookup(features->nth(i)->get_name()) != NULL) {
+                    this->semant_error(env->C->get_filename(), features->nth(i))
+                    << "Attribute "
+                    << features->nth(i)->get_name()->get_string()
+                    << " is an attribute of an inherited class.\n";
+                    return -1;
+                }
+ 
+
                 Symbol* type = new Symbol;
                 *type = features->nth(i)->get_type_decl();
                 env->O->addid(features->nth(i)->get_name(), type);
@@ -430,7 +440,12 @@ void program_class::semant()
     /* some semantic analysis code may go here */
     env = new TypeEnv();
     for(int i = classes->first(); classes->more(i); i = classes->next(i)) {
-        int num_scopes = classtable->setup_env(classes->nth(i));
+        int num_scopes = classtable->setup_env(classes->nth(i)); 
+        if (classtable->errors()) {
+	        cerr << "Compilation halted due to static semantic errors." << endl;
+	        exit(1);
+        }
+
         classes->nth(i)->semant();
         classtable->reset_env(num_scopes);
     }
@@ -482,12 +497,27 @@ void method_class::semant()
 
 void attr_class::semant()
 {
+
+
     if (name == self) {
         classtable->semant_error(env->C->get_filename(), this) 
         << "'" << name << "'"
         << " cannot be the name of an attribute.\n";
         return;
     }
+
+
+    if (!classtable->is_defined_type(type_decl)) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "Class "
+        << type_decl->get_string()
+        << " of attribute "
+        << name->get_string()
+        << " is undefined.\n";
+        return;
+    }
+
+
     if (init->is_no_expr()){
     } else {
         Symbol class_symbol = env->C->get()->get_name();
@@ -542,7 +572,10 @@ void int_const_class::semant() {
 void object_class::semant() {
     Symbol* name_type = env->O->lookup(name);
     if (name_type == NULL) {
-        classtable->semant_error() << "object " << name << " has invalid type\n";
+        classtable->semant_error(env->C->get_filename(), this)
+        << "Undeclared identifier "
+        << name
+        << ".\n";
         type = Object;
         return;
     }
@@ -550,6 +583,15 @@ void object_class::semant() {
 }
 
 void new__class::semant() {
+    // TODO: what if new a type that doesn't exist
+
+    if (!classtable->is_defined_type(type_name)) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "'new' used with undefined class "
+        << type_name->get_string()
+        << ".\n";
+    }
+
     if (type_name == SELF_TYPE){
         type = env->C->get()->get_name();
         return;
