@@ -776,13 +776,13 @@ void neg_class::semant() {
 void plus_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "plus expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "plus expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " + "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -793,13 +793,13 @@ void plus_class::semant() {
 void sub_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "sub expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "sub expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " - "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -811,11 +811,13 @@ void mul_class::semant() {
     e1->semant();
     e2->semant();
 
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "mul expr has invalid type\n";
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "mul expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " * "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -826,13 +828,13 @@ void mul_class::semant() {
 void divide_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "div expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "div expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " / "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -842,13 +844,13 @@ void divide_class::semant() {
 void lt_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "lt expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "lt expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " < "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -859,13 +861,13 @@ void lt_class::semant() {
 void eq_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "eq expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "eq expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " == "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
@@ -875,13 +877,13 @@ void eq_class::semant() {
 void leq_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int) {
-        classtable->semant_error() << "leq expr has invalid type\n";
-        type = Object;
-        return;
-    }
-    if (e2->get_type() != Int) {
-        classtable->semant_error() << "leq expr has invalid type\n";
+    if (e1->get_type() != Int || e2->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "non-Int arguments: "
+        << e1->get_type()->get_string()
+        << " <= "
+        << e2->get_type()->get_string()
+        << "\n";
         type = Object;
         return;
     }
