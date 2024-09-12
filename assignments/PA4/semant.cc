@@ -748,7 +748,8 @@ void loop_class::semant() {
     pred->semant();
     body->semant();
     if (pred->get_type() != Bool) {
-        classtable->semant_error() << "loop pred not type bool\n";
+        classtable->semant_error(env->C->get_filename(), this) 
+        << "Loop condition does not have type Bool.\n";
         type = Object;
         return;
     }
@@ -764,12 +765,12 @@ void isvoid_class::semant() {
 
 void neg_class::semant() {
     e1->semant();
-    if (e1->get_type() != Bool) {
-        classtable->semant_error() << "neg expr has invalid type\n";
+    if (e1->get_type() != Int) {
+        classtable->semant_error(env->C->get_filename(), this) << "neg expr has invalid type\n";
         type = Object;
         return;
     }
-    type = Bool;
+    type = Int;
     return;
 }
 
