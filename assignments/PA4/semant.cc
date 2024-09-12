@@ -239,6 +239,7 @@ bool ClassTable::has_undefined_class() {
     return false;
 }
 
+// Can be improved
 void ClassTable::setup_method_env() {
     Class_ cur_class;
     // Setup method env for all classes
@@ -246,16 +247,63 @@ void ClassTable::setup_method_env() {
     for(int i = 0; i < this->num_classes; i++) {
         cur_class = this->get(types[i]);
         Features features = cur_class->get_features();
-        for(int i = features->first(); features->more(i); i = features->next(i)) {
-            if (features->nth(i)->is_method()) {
-                Method method = {cur_class->get_name(), features->nth(i)->get_name()};
+        for(int j = features->first(); features->more(j); j = features->next(j)) {
+            if (features->nth(j)->is_method()) {
+                Method method = {cur_class->get_name(), features->nth(j)->get_name()};
+
+
                 Signature* sig_ptr = new Signature;
-                *sig_ptr = features->nth(i)->get_signature();
+                *sig_ptr = features->nth(j)->get_signature();
                 env->M->addid(method, sig_ptr);
             }
         }
     }
 
+    // check for method inheritance
+    for(int i = 0; i < this->num_classes; i++) {
+        cur_class = this->get(types[i]);
+        Features features = cur_class->get_features();
+        for(int j = features->first(); features->more(j); j = features->next(j)) {
+            if (!features->nth(j)->is_method())
+                continue;
+            Method cur_method = {types[i], features->nth(j)->get_name()};
+            Signature* cur_sig_ptr = env->M->lookup(cur_method);
+            Signature cur_sig = *cur_sig_ptr;
+            // Check if this method appears in the parent class
+            Class_ parent_class = this->get(cur_class->get_parent());
+            // Search until No_class
+            while(parent_class != NULL) {
+                Method parent_method = {parent_class->get_name(), cur_method.method_name};
+                Signature* parent_sig_ptr = env->M->lookup(parent_method);
+                if (parent_sig_ptr == NULL) {
+                    parent_class = this->get(parent_class->get_parent());
+                    continue;
+                }
+                Signature parent_sig = *parent_sig_ptr;
+                // Check if signatures are the same
+                if (cur_sig->len() != parent_sig->len()) {
+                    this->semant_error(cur_class->get_filename(), cur_class) << "redefined method invalid";
+                    return;
+                }
+                for(int k = cur_sig->first(); cur_sig->more(k); k = cur_sig->next(k)) {
+                    if (cur_sig->nth(k)->get_type() != parent_sig->nth(k)->get_type()) {
+                        this->semant_error(cur_class->get_filename(), cur_class) 
+                        << "In redefined method "
+                        << cur_method.method_name->get_string()
+                        << ", paramter type "
+                        << cur_sig->nth(k)->get_type()->get_string()
+                        << " is different from original type "
+                        << parent_sig->nth(k)->get_type()->get_string()
+                        << "\n";
+                        return;
+                    }
+                }
+                parent_class = this->get(parent_class->get_parent());
+            }
+
+        }
+
+    }
 }
 
 // Return number of scopes entered
@@ -452,29 +500,6 @@ Signature* MethodEnv::lookup(Method method) {
         cur_class_name = classtable->get_parent(cur_class_name);
     } while(cur_class_name != No_class);
     return NULL;
-}
-
-
-void mytest() {
-    Signature sig =  nil_sig();
-    sig = append_sig(sig, single_sig(Object));
-    sig = append_sig(sig, single_sig(Int));
-    sig->dump(cout, 0);
-
-    int i = 0;
-    for (i = sig->first(); sig->more(i); i = sig->next(i)) {
-        cout << sig->nth(i)->get_type()->get_string() << " ";
-    }
-    cout << endl;
-    cout << sig->nth(sig->len()-1)->get_type()->get_string() << endl;
-
-    // SymbolTable<Method, Signature>* map = new SymbolTable<Method, Signature>;
-    // map->enterscope();
-    // Method method = {Object, Int};
-    // Method method2 = {Object, Object};
-    // map->addid(method, &sig);
-
-
 }
 
 void program_class::semant()
