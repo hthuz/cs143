@@ -437,6 +437,8 @@ Signature append_sig(Signature s1, Signature s2) {
     return new append_node<SigType*>(s1, s2);
 }
 
+// use the method in the closest class
+// search from current class up until Object class
 Signature* MethodEnv::lookup(Method method) {
     Symbol cur_class_name = method.class_name;
     Method new_method = method;
@@ -614,7 +616,7 @@ void formal_class::semant() {
         << ".\n";
         return;
     }
-    if (env->O->lookup(name) != NULL) {
+    if (env->O->probe(name) != NULL) {
         classtable->semant_error(env->C->get_filename(), this) 
         << "Formal parameter "
         << name->get_string()
@@ -636,12 +638,22 @@ void assign_class::semant() {
         type = Object;
         return;
     }
+
     expr->semant();
     // cout << (*id_type)->get_string() << endl;
     if (!classtable->is_subtype(expr->get_type(), *id_type)) {
         classtable->semant_error(env->C->get_filename(), this)
         << "assign has invalid type\n";
         type = Object;
+        return;
+    }
+
+    if (name == self) {
+        classtable->semant_error(env->C->get_filename(), this)
+        << "Cannot assign to "
+        << "'" << name->get_string() << "'"
+        << ".\n";
+        type = expr->get_type();
         return;
     }
     type = expr->get_type();
@@ -743,7 +755,12 @@ void static_dispatch_class::semant() {
         actual->nth(i)->semant();
     }
     if (!classtable->is_subtype(expr->get_type(), type_name)) {
-        classtable->semant_error() << "statis dispatch has invalid type\n";
+        classtable->semant_error(env->C->get_filename(), this)
+        << "Expression type "
+        << expr->get_type()->get_string()
+        << " does not conform to declared static dispatch type "
+        << type_name->get_string()
+        << ".\n";
         type = Object;
         return ;
     }
