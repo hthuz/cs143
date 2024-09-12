@@ -584,6 +584,11 @@ void int_const_class::semant() {
 }
 
 void object_class::semant() {
+
+    if (name == self) {
+        type = SELF_TYPE;
+        return;
+    }
     Symbol* name_type = env->O->lookup(name);
     if (name_type == NULL) {
         classtable->semant_error(env->C->get_filename(), this)
@@ -599,6 +604,11 @@ void object_class::semant() {
 void new__class::semant() {
     // TODO: what if new a type that doesn't exist
 
+    if (type_name == SELF_TYPE){
+        type = type_name;
+        return;
+    }
+
     if (!classtable->is_defined_type(type_name)) {
         classtable->semant_error(env->C->get_filename(), this) 
         << "'new' used with undefined class "
@@ -606,10 +616,6 @@ void new__class::semant() {
         << ".\n";
     }
 
-    if (type_name == SELF_TYPE){
-        type = env->C->get()->get_name();
-        return;
-    }
     type = type_name;
 }
 
@@ -623,6 +629,7 @@ void dispatch_class::semant() {
         expr_type = env->C->get()->get_name();
 
     Method method = {expr_type, name};
+    // cout << expr_type->get_string() << " " << name->get_string() << endl;
     Signature* sig_ptr = env->M->lookup(method);
     if (sig_ptr == NULL) {
         classtable->semant_error(env->C->get_filename(), this)
@@ -926,21 +933,3 @@ void comp_class::semant() {
 void no_expr_class::semant() {
     type = Object;
 }
-
-// Symbol eq_class::semant() {
-//     Symbol e1_type = e1->semant();
-//     Symbol e2_type = e2->semant();
-//     if ((e1_type == Int || e2_type == Int) && e1_type != e2_type) {
-//         classtable->semant_error() << "invalid type comparsion";
-//         return Object;
-//     }
-//     if ((e1_type == Str || e2_type == Str) && e1_type != e2_type) {
-//         classtable->semant_error() << "invalid type comparsion";
-//         return Object;
-//     }
-//     if ((e1_type == Bool || e2_type == Bool) && e1_type != e2_type) {
-//         classtable->semant_error() << "invalid type comparsion";
-//         return Object;
-//     }
-//     return Bool;
-// }
