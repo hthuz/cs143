@@ -881,11 +881,13 @@ void lt_class::semant() {
 void eq_class::semant() {
     e1->semant();
     e2->semant();
-    if (e1->get_type() != Int || e2->get_type() != Int) {
+    if ((e1->get_type() == Int || e1->get_type() == Str || e1->get_type() == Bool ||
+         e2->get_type() == Int || e2->get_type() == Str || e2->get_type() == Bool) && 
+         (e1->get_type() != e2->get_type())) {
         classtable->semant_error(env->C->get_filename(), this) 
         << "non-Int arguments: "
         << e1->get_type()->get_string()
-        << " == "
+        << " = "
         << e2->get_type()->get_string()
         << "\n";
         type = Object;
