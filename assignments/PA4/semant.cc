@@ -632,7 +632,7 @@ void attr_class::semant()
     }
 
 
-    if (!classtable->is_defined_type(type_decl)) {
+    if (!classtable->is_defined_type(type_decl) && type_decl != SELF_TYPE) {
         classtable->semant_error(env->C->get_filename(), this) 
         << "Class "
         << type_decl->get_string()
