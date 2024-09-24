@@ -427,6 +427,7 @@ void StringEntry::code_ref(ostream &s)
 	s << STRCONST_PREFIX << index;
 }
 
+
 //
 // Emit code for a constant String.
 // You should fill in the code naming the dispatch table.
@@ -447,7 +448,7 @@ void StringEntry::code_def(ostream &s, int stringclasstag)
 
 	/***** Add dispatch information for class String ******/
 
-	s << endl; // dispatch table
+	s << str << DISPTAB_SUFFIX << endl; // dispatch table
 	s << WORD;
 	lensym->code_ref(s);
 	s << endl;					  // string length
@@ -676,14 +677,41 @@ void CgenClassTable::code_constants()
 
 void CgenClassTable::code_class_nameTab()
 {
+	str << CLASSNAMETAB <<  ":" << endl;
+	for (int i = 0; i < total_class_tag_num; i++) {
+		stringtable.lookup_string(get_node_by_class_tag(i)->get_name()->get_string())->code_ref(str);
+		str << endl;
+	}
+}
+
+
+void CgenClassTable::code_class_objTab() 
+{
+	str << CLASSOBJTAB << ":" << endl;
+	for (int i = 0; i < total_class_tag_num; i++) {
+		char* classname = get_node_by_class_tag(i)->get_name()->get_string();
+		str << WORD << classname << PROTOBJ_SUFFIX << endl;
+		str << WORD << classname << CLASSINIT_SUFFIX << endl;
+	}
+}
+
+void CgenClassTable::code_dispTab() 
+{
+
+}
+
+void CgenClassTable::code_protObj()
+{
+
 }
 
 CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 {
-
-	stringclasstag = 4 /* Change to your String class tag here */;
+	objectclasstag = 0;
+	ioclasstag = 1;
 	intclasstag = 2 /* Change to your Int class tag here */;
 	boolclasstag = 3 /* Change to your Bool class tag here */;
+	stringclasstag = 4 /* Change to your String class tag here */;
 
 	enterscope();
 	if (cgen_debug)
@@ -695,6 +723,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 	code();
 	exitscope();
 }
+
 
 void CgenClassTable::install_basic_classes()
 {
@@ -713,13 +742,13 @@ void CgenClassTable::install_basic_classes()
 	//
 	addid(No_class,
 		  new CgenNode(class_(No_class, No_class, nil_Features(), filename),
-					   Basic, this));
+					   Basic, this, -1));
 	addid(SELF_TYPE,
 		  new CgenNode(class_(SELF_TYPE, No_class, nil_Features(), filename),
-					   Basic, this));
+					   Basic, this, -1));
 	addid(prim_slot,
 		  new CgenNode(class_(prim_slot, No_class, nil_Features(), filename),
-					   Basic, this));
+					   Basic, this, -1));
 
 	//
 	// The Object class has no parent class. Its methods are
@@ -740,7 +769,7 @@ void CgenClassTable::install_basic_classes()
 						   single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 					   single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 				   filename),
-			Basic, this));
+			Basic, this, 0));
 
 	//
 	// The IO class inherits from Object. Its methods are
@@ -763,7 +792,7 @@ void CgenClassTable::install_basic_classes()
 						   single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 					   single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 				   filename),
-			Basic, this));
+			Basic, this, 1));
 
 	//
 	// The Int class has no methods and only a single attribute, the
@@ -775,7 +804,7 @@ void CgenClassTable::install_basic_classes()
 				   Object,
 				   single_Features(attr(val, prim_slot, no_expr())),
 				   filename),
-			Basic, this));
+			Basic, this, 2));
 
 	//
 	// Bool also has only the "val" slot.
@@ -783,7 +812,7 @@ void CgenClassTable::install_basic_classes()
 	install_class(
 		new CgenNode(
 			class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())), filename),
-			Basic, this));
+			Basic, this, 3));
 
 	//
 	// The class Str has a number of slots and operations:
@@ -814,7 +843,7 @@ void CgenClassTable::install_basic_classes()
 											  Str,
 											  no_expr()))),
 				   filename),
-			Basic, this));
+			Basic, this, 4));
 }
 
 // CgenClassTable::install_class
@@ -839,8 +868,9 @@ void CgenClassTable::install_class(CgenNodeP nd)
 
 void CgenClassTable::install_classes(Classes cs)
 {
+	total_class_tag_num = 5;
 	for (int i = cs->first(); cs->more(i); i = cs->next(i))
-		install_class(new CgenNode(cs->nth(i), NotBasic, this));
+		install_class(new CgenNode(cs->nth(i), NotBasic, this, total_class_tag_num++));
 }
 
 //
@@ -891,14 +921,15 @@ void CgenClassTable::code()
 		cout << "coding constants" << endl;
 	code_constants();
 
-	// class_nameTab
-	code_class_nameTab();
-
 	//                 Add your code to emit
 	//                   - prototype objects
 	//                   - class_nameTab
 	//                   - dispatch tables
 	//
+	code_class_nameTab();
+	code_class_objTab();
+	code_dispTab();
+	code_protObj();
 
 	if (cgen_debug)
 		cout << "coding global text" << endl;
@@ -908,6 +939,15 @@ void CgenClassTable::code()
 	//                   - object initializer
 	//                   - the class methods
 	//                   - etc...
+}
+
+
+CgenNode* CgenClassTable::get_node_by_class_tag(int class_tag) {
+	for(List<CgenNode> *l = nds; l; l=l->tl()) {
+		if (l->hd()->get_class_tag() == class_tag) 
+			return l->hd();
+	}
+	return NULL;
 }
 
 CgenNodeP CgenClassTable::root()
@@ -921,10 +961,11 @@ CgenNodeP CgenClassTable::root()
 //
 ///////////////////////////////////////////////////////////////////////
 
-CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) : class__class((const class__class &)*nd),
+CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct, int class_tag) : class__class((const class__class &)*nd),
 																	   parentnd(NULL),
 																	   children(NULL),
-																	   basic_status(bstatus)
+																	   basic_status(bstatus),
+																	   class_tag(class_tag)
 {
 	stringtable.add_string(name->get_string()); // Add class name to string table
 }

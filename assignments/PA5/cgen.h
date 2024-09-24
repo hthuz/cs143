@@ -23,6 +23,9 @@ class CgenClassTable : public SymbolTable<Symbol, CgenNode>
 private:
     List<CgenNode> *nds;
     ostream &str;
+    int total_class_tag_num;
+    int objectclasstag;
+    int ioclasstag;
     int stringclasstag;
     int intclasstag;
     int boolclasstag;
@@ -36,6 +39,9 @@ private:
     void code_select_gc();
     void code_constants();
     void code_class_nameTab();
+    void code_class_objTab();
+    void code_dispTab();
+    void code_protObj();
 
     // The following creates an inheritance graph from
     // a list of classes.  The graph is implemented as
@@ -47,6 +53,10 @@ private:
     void install_classes(Classes cs);
     void build_inheritance_tree();
     void set_relations(CgenNodeP nd);
+    
+
+    // auxiliary methods
+    CgenNode* get_node_by_class_tag(int class_tag);
 
 public:
     CgenClassTable(Classes, ostream &str);
@@ -61,17 +71,20 @@ private:
     List<CgenNode> *children; // Children of class
     Basicness basic_status;   // `Basic' if class is basic
                               // `NotBasic' otherwise
+    int class_tag;
 
 public:
     CgenNode(Class_ c,
              Basicness bstatus,
-             CgenClassTableP class_table);
+             CgenClassTableP class_table,
+             int class_tag);
 
     void add_child(CgenNodeP child);
     List<CgenNode> *get_children() { return children; }
     void set_parentnd(CgenNodeP p);
     CgenNodeP get_parentnd() { return parentnd; }
     int basic() { return (basic_status == Basic); }
+    int get_class_tag() {return class_tag;}
 };
 
 class BoolConst
