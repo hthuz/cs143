@@ -12,6 +12,41 @@ enum Basicness
 #define TRUE 1
 #define FALSE 0
 
+template <typename T>
+class Stack {
+private:
+  T* elts;
+  int  num;
+public:
+  Stack(int max_size) {
+    elts  = new T[max_size];
+    num = 0;
+  }
+  void push(T elt) {
+    elts[num++] = elt;
+  }
+  T pop() {
+    return elts[--num];
+  }
+  bool is_empty() {
+    return num == 0;
+  }
+  bool has_element(T elt) {
+    for (int i = 0; i < num; i++) 
+      if (elts[i] == elt)
+        return true;
+    return false;
+  }
+  // For debugging
+  T at(int index) {
+    return elts[index];
+  }
+  int size() {
+    return num;
+  }
+
+};
+
 class CgenClassTable;
 typedef CgenClassTable *CgenClassTableP;
 
@@ -84,7 +119,11 @@ public:
     void set_parentnd(CgenNodeP p);
     CgenNodeP get_parentnd() { return parentnd; }
     int basic() { return (basic_status == Basic); }
+
     int get_class_tag() {return class_tag;}
+    int get_size();
+    void code_dispTab(ostream& s);
+    void code_protObj(ostream& s);
 };
 
 class BoolConst
@@ -97,3 +136,4 @@ public:
     void code_def(ostream &, int boolclasstag);
     void code_ref(ostream &) const;
 };
+

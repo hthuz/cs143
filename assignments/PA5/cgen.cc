@@ -679,6 +679,7 @@ void CgenClassTable::code_class_nameTab()
 {
 	str << CLASSNAMETAB <<  ":" << endl;
 	for (int i = 0; i < total_class_tag_num; i++) {
+		str << WORD;
 		stringtable.lookup_string(get_node_by_class_tag(i)->get_name()->get_string())->code_ref(str);
 		str << endl;
 	}
@@ -698,11 +699,21 @@ void CgenClassTable::code_class_objTab()
 void CgenClassTable::code_dispTab() 
 {
 
+	for (List<CgenNode>* l = nds; l; l = l->tl()) {
+		if (l->hd()->get_class_tag() < 0)
+			continue;
+		l->hd()->code_dispTab(str);
+	}
+
 }
 
 void CgenClassTable::code_protObj()
 {
-
+	for (List<CgenNode>* l = nds; l; l = l->tl()) {
+		if (l->hd()->get_class_tag() < 0)
+			continue;
+		l->hd()->code_protObj(str);
+	}
 }
 
 CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
@@ -969,6 +980,88 @@ CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct, int class_t
 {
 	stringtable.add_string(name->get_string()); // Add class name to string table
 }
+
+int CgenNode::get_size() {
+	int obj_size = 0;
+	CgenNodeP cur = this;
+	while(cur) {
+		for (int i = cur->features->first(); cur->features->more(i); i = cur->features->next(i)) {
+			if (cur->features->nth(i)->is_method())
+				continue;
+			obj_size++;
+		}
+		cur = cur->get_parentnd();
+	}
+	return obj_size + DEFAULT_OBJFIELDS;
+}
+
+void CgenNode::code_dispTab(ostream &s) {
+	s << this->get_name()->get_string() << DISPTAB_SUFFIX << endl;
+	CgenNodeP cur = this;
+	Stack<char*>* stack = new Stack<char*>(1024);
+	while (cur) {
+		for (int i = cur->features->len() - 1; i >= 0 ; i--) {
+			if(!cur->features->nth(i)->is_method())
+				continue;
+			// Concatenate
+			char* class_name = cur->get_name()->get_string();
+			char* method_name = cur->features->nth(i)->get_name()->get_string();
+			char* res = new char[strlen(class_name) + strlen(method_name) + 2];
+			strcpy(res, class_name);
+			res[strlen(class_name)] = '.';
+			strcpy(res + strlen(class_name) + 1, method_name);
+
+			stack->push(res);
+		}
+		cur = cur->get_parentnd();
+	}
+	// Print the stack
+	while(!stack->is_empty()) {
+		s << WORD << stack->pop() << endl;
+	}
+
+}
+
+void CgenNode::code_protObj(ostream &s) {
+	s << WORD << "-1" << endl;
+	s << get_name()->get_string() << PROTOBJ_SUFFIX << endl;
+	s << WORD << class_tag << endl;
+	s << WORD << get_size() << endl;
+	s << WORD << get_name()->get_string() << DISPTAB_SUFFIX << endl;
+
+	CgenNodeP cur = this;
+	Stack<Feature>* stack = new Stack<Feature>(1024);
+	while(cur) {
+		for(int i = cur->features->len() - 1; i >= 0; i--) {
+			if (cur->features->nth(i)->is_method())
+				continue;
+			stack->push(cur->features->nth(i));
+		}
+		cur = cur->get_parentnd();
+	}
+	// TODO: if attr has init
+	while(!stack->is_empty()) {
+		Feature feat = stack->pop();
+		// TODO: tmp use. to be updated.
+		if (feat->get_type_decl() == Int && feat->get_name() == val) {
+			s << WORD << INTCONST_PREFIX << 0 << endl;
+			continue;
+		}
+		// Other types
+		s << WORD << 0 << endl;
+	}
+
+}
+
+
+// IntEntry find_entry_by_int(char* num)  {
+// 	for(int i = inttable.first(); inttable.more(i); i = inttable.next(i)) {
+// 		if (inttable.lookup(i).get_string())
+// 		inttable.
+// 	}
+// }
+
+
 
 //******************************************************************
 //
