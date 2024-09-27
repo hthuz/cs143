@@ -504,7 +504,7 @@ void IntEntry::code_def(ostream &s, int intclasstag)
 //
 void IntTable::code_string_table(ostream &s, int intclasstag)
 {
-	for (List<IntEntry> *l = tbl; l; l = l->tl())
+	for (List<IntEntry> *l = tbl; l; l = l->tl()) 
 		l->hd()->code_def(s, intclasstag);
 }
 
@@ -1039,16 +1039,31 @@ void CgenNode::code_protObj(ostream &s) {
 		}
 		cur = cur->get_parentnd();
 	}
-	// TODO: if attr has init
 	while(!stack->is_empty()) {
 		Feature feat = stack->pop();
-		// TODO: tmp use. to be updated.
-		if (feat->get_type_decl() == Int && feat->get_name() == val) {
-			s << WORD << INTCONST_PREFIX << 0 << endl;
+		s << WORD;
+		// Int: int_const0
+		// Str: string_const 10
+		// Bool: bool_const 0
+		// Object, IO, etc: all 0
+		if (feat->get_type_decl() == Int)  {
+			char default_int[] = "0";
+			inttable.lookup_string(default_int)->code_ref(s);
+			s << endl;
 			continue;
 		}
-		// Other types
-		s << WORD << 0 << endl;
+		if (feat->get_type_decl() == Str) {
+			char default_str[] = "";
+			stringtable.lookup_string(default_str)->code_ref(s);
+			s << endl;
+			continue;
+		}
+		if (feat->get_type_decl() == Bool) {
+			falsebool.code_ref(s);
+			s << endl;
+			continue;
+		}
+		s << 0 << endl;
 	}
 
 }
