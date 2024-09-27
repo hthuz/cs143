@@ -398,6 +398,30 @@ static void emit_gc_check(char *source, ostream &s)
 	s << JAL << "_gc_check" << endl;
 }
 
+static void emit_setup_frame(int num_args, ostream &s)
+{
+	// allocate stack
+	emit_addiu(SP, SP, -(3 + num_args) * WORD_SIZE, s);
+	// store old $fp, $s0 and $ra
+	emit_store(FP, 3 + num_args , SP, s);
+	emit_store(SELF, 2 + num_args, SP, s);
+	emit_store(RA, 1 + num_args, SP, s);
+	// setup new $fp and $s0
+	emit_addiu(FP, SP, WORD_SIZE, s);
+}
+
+static void emit_tear_frame(int num_args, ostream &s)
+{
+	// restore $fp, $s0 and $ra
+	emit_load(FP, 3 + num_args, SP, s);
+	emit_load(SELF,2 + num_args, SP, s);
+	emit_load(RA, 1 + num_args, SP, s);
+	// deallocate stack
+	emit_addiu(SP, SP, (3 + num_args) * WORD_SIZE, s);
+	// jump to return address
+	emit_return(s);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // coding strings, ints, and booleans
@@ -716,6 +740,15 @@ void CgenClassTable::code_protObj()
 	}
 }
 
+void CgenClassTable::code_init()
+{
+	for (List<CgenNode>* l = nds; l; l = l->tl()) {
+		if (l->hd()->get_class_tag() < 0)
+			continue;
+		l->hd()->code_init(str);
+	}
+}
+
 CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 {
 	objectclasstag = 0;
@@ -950,6 +983,7 @@ void CgenClassTable::code()
 	//                   - object initializer
 	//                   - the class methods
 	//                   - etc...
+	code_init();
 }
 
 
@@ -1068,13 +1102,20 @@ void CgenNode::code_protObj(ostream &s) {
 
 }
 
+void CgenNode::code_init(ostream& s) {
+	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
+	emit_setup_frame(0, s);
 
-// IntEntry find_entry_by_int(char* num)  {
-// 	for(int i = inttable.first(); inttable.more(i); i = inttable.next(i)) {
-// 		if (inttable.lookup(i).get_string())
-// 		inttable.
-// 	}
-// }
+	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
+	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
+
+	if (get_name() != Object)
+		strcat(parent_init, CLASSINIT_SUFFIX);
+	emit_move(SELF, ACC, s); // store $a0 to $s0
+	emit_jal(parent_init, s);
+	emit_move(ACC, SELF, s); // return value (return SELF)
+	emit_tear_frame(0, s);
+}
 
 
 

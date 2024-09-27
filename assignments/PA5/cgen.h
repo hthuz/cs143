@@ -77,6 +77,7 @@ private:
     void code_class_objTab();
     void code_dispTab();
     void code_protObj();
+    void code_init();
 
     // The following creates an inheritance graph from
     // a list of classes.  The graph is implemented as
@@ -124,6 +125,7 @@ public:
     int get_size();
     void code_dispTab(ostream& s);
     void code_protObj(ostream& s);
+    void code_init(ostream& s);
 };
 
 class BoolConst
