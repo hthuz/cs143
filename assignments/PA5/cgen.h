@@ -78,6 +78,7 @@ private:
     void code_dispTab();
     void code_protObj();
     void code_init();
+    void code_method();
 
     // The following creates an inheritance graph from
     // a list of classes.  The graph is implemented as
@@ -126,6 +127,7 @@ public:
     void code_dispTab(ostream& s);
     void code_protObj(ostream& s);
     void code_init(ostream& s);
+    void code_method(ostream& s);
 };
 
 class BoolConst
@@ -139,3 +141,28 @@ public:
     void code_ref(ostream &) const;
 };
 
+
+typedef uint address;
+
+
+class Environment : public SymbolTable<IdEntry, address>{
+};
+
+class Store : public SymbolTable<address, Entry> {
+
+};
+
+class SelfObject {
+};
+
+class CgenEnv {
+public:
+  Environment* E;
+  Store* S;
+  SelfObject* so;
+  CgenEnv() {
+    E = new Environment();
+    S = new Store();
+    so = new SelfObject();
+  }
+};

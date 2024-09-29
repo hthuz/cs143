@@ -127,6 +127,7 @@ BoolConst truebool(TRUE);
 // generator.
 //
 //*********************************************************
+CgenEnv* env;
 
 void program_class::cgen(ostream &os)
 {
@@ -398,14 +399,14 @@ static void emit_gc_check(char *source, ostream &s)
 	s << JAL << "_gc_check" << endl;
 }
 
-static void emit_setup_frame(int num_args, ostream &s)
+static void emit_setup_frame(ostream &s)
 {
 	// allocate stack
-	emit_addiu(SP, SP, -(3 + num_args) * WORD_SIZE, s);
+	emit_addiu(SP, SP, -3 * WORD_SIZE, s);
 	// store old $fp, $s0 and $ra
-	emit_store(FP, 3 + num_args , SP, s);
-	emit_store(SELF, 2 + num_args, SP, s);
-	emit_store(RA, 1 + num_args, SP, s);
+	emit_store(FP, 3 , SP, s);
+	emit_store(SELF, 2, SP, s);
+	emit_store(RA, 1, SP, s);
 	// setup new $fp and $s0
 	emit_addiu(FP, SP, WORD_SIZE, s);
 }
@@ -413,9 +414,9 @@ static void emit_setup_frame(int num_args, ostream &s)
 static void emit_tear_frame(int num_args, ostream &s)
 {
 	// restore $fp, $s0 and $ra
-	emit_load(FP, 3 + num_args, SP, s);
-	emit_load(SELF,2 + num_args, SP, s);
-	emit_load(RA, 1 + num_args, SP, s);
+	emit_load(FP, 3, SP, s);
+	emit_load(SELF,2, SP, s);
+	emit_load(RA, 1, SP, s);
 	// deallocate stack
 	emit_addiu(SP, SP, (3 + num_args) * WORD_SIZE, s);
 	// jump to return address
@@ -749,6 +750,15 @@ void CgenClassTable::code_init()
 	}
 }
 
+void CgenClassTable::code_method()
+{
+	for (List<CgenNode>* l = nds; l; l = l->tl()) {
+		if (l->hd()->get_class_tag() < 0 || l->hd()->basic())
+			continue;
+		l->hd()->code_method(str);
+	}
+}
+
 CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 {
 	objectclasstag = 0;
@@ -984,6 +994,8 @@ void CgenClassTable::code()
 	//                   - the class methods
 	//                   - etc...
 	code_init();
+	env = new CgenEnv();
+	code_method();
 }
 
 
@@ -1104,7 +1116,7 @@ void CgenNode::code_protObj(ostream &s) {
 
 void CgenNode::code_init(ostream& s) {
 	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
-	emit_setup_frame(0, s);
+	emit_setup_frame(s);
 
 	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
 	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
@@ -1117,6 +1129,21 @@ void CgenNode::code_init(ostream& s) {
 	emit_tear_frame(0, s);
 }
 
+void CgenNode::code_method(ostream& s) {
+	for (int i = features->first(); features->more(i); i = features->next(i)) {
+		if (!features->nth(i)->is_method()) 
+			continue;
+		s << get_name()->get_string() << "." << features->nth(i)->get_name()->get_string() << ":" << endl;
+		features->nth(i)->code(s);
+	}
+}
+
+
+void method_class::code(ostream& s) {
+	emit_setup_frame(s);
+	expr->code(s);
+	emit_tear_frame(formals->len(),s);
+}
 
 
 //******************************************************************
