@@ -473,7 +473,7 @@ void StringEntry::code_def(ostream &s, int stringclasstag)
 
 	/***** Add dispatch information for class String ******/
 
-	s << str << DISPTAB_SUFFIX << endl; // dispatch table
+	s << "String" << DISPTAB_SUFFIX << endl; // dispatch table
 	s << WORD;
 	lensym->code_ref(s);
 	s << endl;					  // string length
@@ -488,8 +488,9 @@ void StringEntry::code_def(ostream &s, int stringclasstag)
 //
 void StrTable::code_string_table(ostream &s, int stringclasstag)
 {
-	for (List<StringEntry> *l = tbl; l; l = l->tl())
+	for (List<StringEntry> *l = tbl; l; l = l->tl()) {
 		l->hd()->code_def(s, stringclasstag);
+	}
 }
 
 //
@@ -518,7 +519,7 @@ void IntEntry::code_def(ostream &s, int intclasstag)
 
 	/***** Add dispatch information for class Int ******/
 
-	s << endl;				  // dispatch table
+	s << "Int" << DISPTAB_SUFFIX << endl; // dispatch table
 	s << WORD << str << endl; // integer value
 }
 
@@ -561,7 +562,7 @@ void BoolConst::code_def(ostream &s, int boolclasstag)
 
 	/***** Add dispatch information for class Bool ******/
 
-	s << endl;				  // dispatch table
+	s << "Bool" << DISPTAB_SUFFIX << endl;				  // dispatch table
 	s << WORD << val << endl; // value (0 or 1)
 }
 
@@ -1042,7 +1043,7 @@ int CgenNode::get_size() {
 }
 
 void CgenNode::code_dispTab(ostream &s) {
-	s << this->get_name()->get_string() << DISPTAB_SUFFIX << endl;
+	s << this->get_name()->get_string() << DISPTAB_SUFFIX << ":" << endl;
 	CgenNodeP cur = this;
 	Stack<char*>* stack = new Stack<char*>(1024);
 	while (cur) {
@@ -1070,7 +1071,7 @@ void CgenNode::code_dispTab(ostream &s) {
 
 void CgenNode::code_protObj(ostream &s) {
 	s << WORD << "-1" << endl;
-	s << get_name()->get_string() << PROTOBJ_SUFFIX << endl;
+	s << get_name()->get_string() << PROTOBJ_SUFFIX << ":" << endl;
 	s << WORD << class_tag << endl;
 	s << WORD << get_size() << endl;
 	s << WORD << get_name()->get_string() << DISPTAB_SUFFIX << endl;
@@ -1121,10 +1122,10 @@ void CgenNode::code_init(ostream& s) {
 	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
 	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
 
-	if (get_name() != Object)
-		strcat(parent_init, CLASSINIT_SUFFIX);
+	strcat(parent_init, CLASSINIT_SUFFIX);
 	emit_move(SELF, ACC, s); // store $a0 to $s0
-	emit_jal(parent_init, s);
+	if (get_name() != Object)
+		emit_jal(parent_init, s);
 	emit_move(ACC, SELF, s); // return value (return SELF)
 	emit_tear_frame(0, s);
 }
