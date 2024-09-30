@@ -36,6 +36,9 @@
 #define STRCONST_PREFIX      "str_const"
 #define BOOLCONST_PREFIX     "bool_const"
 
+#define OBJECT_COPY          "Object.copy"
+#define DISPATCH_ABORT       "_dispatch_abort"
+
 
 #define EMPTYSLOT            0
 #define LABEL                ":\n"
@@ -52,6 +55,7 @@
 #define TAG_OFFSET 0
 #define SIZE_OFFSET 1
 #define DISPTABLE_OFFSET 2
+#define ATTR0_OFFSET 3
 
 #define STRING_SLOTS      1
 #define INT_SLOTS         1

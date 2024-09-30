@@ -1241,7 +1241,7 @@ void dispatch_class::code(ostream &s)
 	// TOCHECK: str_const0 always point to file name?
 	emit_load_address(ACC, "str_const0", s) ;
 	emit_load_imm(T1, this->get_line_number(), s);
-	emit_jal("_dispatch_abort", s);
+	emit_jal(DISPATCH_ABORT, s);
 	emit_label_def(label_num++, s);
 
 	// Dispatch table
@@ -1256,8 +1256,25 @@ void dispatch_class::code(ostream &s)
 
 }
 
+// beqz else_label
+// [true body]
+// b end_label
+// else_label:
+// [else body]
+// end_label:
 void cond_class::code(ostream &s)
 {
+	pred->code(s);
+	emit_load(T1, ATTR0_OFFSET, ACC, s);
+	int else_label_num = label_num++;
+	emit_beqz(T1, else_label_num, s);
+	then_exp->code(s);
+
+	int end_label_num = label_num++;
+	emit_branch(end_label_num, s);
+	emit_label_def(else_label_num, s);
+	else_exp->code(s);
+	emit_label_def(end_label_num, s);
 }
 
 void loop_class::code(ostream &s)
@@ -1283,17 +1300,17 @@ void plus_class::code(ostream &s)
 {
 	e1->code(s);
 	// Load the int 
-	emit_load(T1,3, ACC, s);
+	emit_load(T1,ATTR0_OFFSET, ACC, s);
 	emit_store(T1, 0, SP, s);
 	emit_addiu(SP, SP, -4, s);
 	e2->code(s);
 	// Create a new Int address for operation result
-	emit_jal("Object.copy", s);
+	emit_jal(OBJECT_COPY, s);
 	emit_load(T1, 1, SP, s);
-	emit_load(T2, 3, ACC, s);
+	emit_load(T2, ATTR0_OFFSET, ACC, s);
 	emit_add(T1, T1, T2, s);
 	// Store opeartion result into specified location
-	emit_store(T1, 3, ACC, s);
+	emit_store(T1, ATTR0_OFFSET, ACC, s);
 
 	emit_addiu(SP, SP, 4, s);
 }
@@ -1313,11 +1330,30 @@ void divide_class::code(ostream &s)
 void neg_class::code(ostream &s)
 {
 	e1->code(s);
-	emit_neg(ACC, ACC, s);
+	// Create a new Int address for op result
+	emit_jal(OBJECT_COPY, s);
+	emit_load(T1, ATTR0_OFFSET, ACC, s);
+	emit_neg(T1, T1, s);
+	emit_store(T1, ATTR0_OFFSET, ACC, s);
 }
 
 void lt_class::code(ostream &s)
 {
+	e1->code(s);
+	emit_load(T1, ATTR0_OFFSET, ACC, s);
+	emit_store(T1, 0, SP, s);
+	emit_addiu(SP, SP, -4, s);
+	e2->code(s);
+
+	// Compare
+	emit_load(T1, 1, SP, s);
+	emit_load(T2, ATTR0_OFFSET, SP, s);
+	emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl;
+	emit_blt(T1, T2, label_num, s);
+	emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+
+	// Next step
+	emit_label_def(label_num++, s);
 }
 
 void eq_class::code(ostream &s)
@@ -1330,6 +1366,13 @@ void leq_class::code(ostream &s)
 
 void comp_class::code(ostream &s)
 {
+	e1->code(s);
+	emit_load(T1, ATTR0_OFFSET, ACC, s);
+	emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl; 
+	emit_beqz(T1, label_num, s);
+	emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+
+	emit_label_def(label_num++, s);
 }
 
 void int_const_class::code(ostream &s)
