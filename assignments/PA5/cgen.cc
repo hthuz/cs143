@@ -174,6 +174,7 @@ public:
 	}
 };
 
+// class => attribute layout
 class AttrMap : public SymbolTable<Symbol, Stack<Feature> > {
 public:
 	int get_attr_offset(Symbol type, Symbol identifer) {
@@ -189,10 +190,13 @@ public:
 
 class SelfObject {
 private:
-	CgenNodeP node;
+	CgenNodeP node; // class
+	Feature cur_method;
 public:
 	void set_node(CgenNodeP n) {node = n;}
 	CgenNodeP get_node() {return node;}
+	void set_method(Feature m) {cur_method = m;}
+	Feature get_method() {return cur_method;}
 };
 
 class CgenEnv {
@@ -208,6 +212,8 @@ public:
     so = new SelfObject();
 	disp_map = new DispMap();
 	attr_map = new AttrMap();
+	disp_map->enterscope();
+	attr_map->enterscope();
   }
 };
 
@@ -1068,8 +1074,6 @@ void CgenClassTable::code()
 	//                   - dispatch tables
 	//
 	env = new CgenEnv();
-	env->disp_map->enterscope();
-	env->attr_map->enterscope();
 	code_class_nameTab();
 	code_class_objTab();
 	code_dispTab();
@@ -1230,6 +1234,7 @@ void CgenNode::code_method(ostream& s) {
 		if (!features->nth(i)->is_method()) {
 			continue;
 		}
+		env->so->set_method(features->nth(i));
 		s << get_name()->get_string() << "." << features->nth(i)->get_name()->get_string() << ":" << endl;
 		features->nth(i)->code(s);
 	}
@@ -1487,13 +1492,30 @@ void no_expr_class::code(ostream &s)
 
 void object_class::code(ostream &s)
 {
+	// self
 	if (name == self) {
 		emit_move(ACC, SELF, s);
 		return;
 	}
+	// object attribute
 	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
 	if (attr_offset != -1) {
 		emit_load(ACC, attr_offset, SELF, s);
 		return;
 	}
+	// method parameter
+	int arg_offset = env->so->get_method()->get_arg_offset(name);
+	if (arg_offset != -1) {
+		emit_load(ACC, arg_offset, FP, s);
+		return;
+	}
+}
+
+int method_class::get_arg_offset(Symbol arg) {
+	for(int i = formals->first(); formals->more(i); i = formals->next(i)) {
+		if (formals->nth(i)->get_name() == arg) {
+			return FRAME_ARG0_OFFSET + formals->len() - i - 1;
+		}
+	}
+	return -1;
 }

@@ -57,6 +57,12 @@
 #define DISPTABLE_OFFSET 2
 #define ATTR0_OFFSET 3
 
+// information about activation record, based on $fp
+#define FRAME_RET_ADDR_OFFSET 0
+#define FRAME_OLD_SELF_OFFSET 1
+#define FRAME_OLD_FP_OFFSET 2
+#define FRAME_ARG0_OFFSET 3
+
 #define STRING_SLOTS      1
 #define INT_SLOTS         1
 #define BOOL_SLOTS        1
