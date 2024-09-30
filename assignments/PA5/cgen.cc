@@ -126,8 +126,71 @@ BoolConst truebool(TRUE);
 // That constructor performs all of the work of the code
 // generator.
 //
-//*********************************************************
+//**********************************************************
+class Method {
+public:
+  Symbol class_name;
+  Symbol method_name;
+  Method(Symbol c, Symbol m) {
+	class_name = c;
+	method_name = m;
+  }
+  bool operator==(const Method& other) const{
+    return class_name == other.class_name && method_name == other.method_name;
+  }
+  char* to_disp_label() {
+	char* res = new char[strlen(class_name->get_string()) + strlen(method_name->get_string()) + 2];
+	strcpy(res, class_name->get_string());
+	res[strlen(class_name->get_string())] = '.';
+	strcpy(res + strlen(class_name->get_string()) + 1, method_name->get_string());
+  return res;
+
+  }
+};
+
+class Location{
+public:
+
+};
+
+class Environment : public SymbolTable<IdEntry, Location>{
+};
+
+class Store : public SymbolTable<Location, Entry> {
+};
+
+// Type => dispatch table(with only method symbol)
+class DispMap : public SymbolTable<Symbol, Stack<Method*> > {
+public:
+	int get_method_offset(Symbol type, Symbol method) {
+		Stack<Method*>* stack = this->lookup(type);
+		for (int i = 0; i < stack->size(); i++) {
+			if (stack->at(i)->method_name == method)
+				return stack->size() - i - 1;
+		}
+		return -1;
+	}
+};
+
+class SelfObject {
+};
+
+class CgenEnv {
+public:
+  Environment* E;
+  Store* S;
+  SelfObject* so;
+  DispMap* disp_map; // type => dispatch table
+  CgenEnv() {
+    E = new Environment();
+    S = new Store();
+    so = new SelfObject();
+	disp_map = new DispMap();
+  }
+};
+
 CgenEnv* env;
+int label_num = 0;
 
 void program_class::cgen(ostream &os)
 {
@@ -409,6 +472,7 @@ static void emit_setup_frame(ostream &s)
 	emit_store(RA, 1, SP, s);
 	// setup new $fp and $s0
 	emit_addiu(FP, SP, WORD_SIZE, s);
+	emit_move(SELF, ACC, s); // store $a0 to $s0
 }
 
 static void emit_tear_frame(int num_args, ostream &s)
@@ -981,6 +1045,8 @@ void CgenClassTable::code()
 	//                   - class_nameTab
 	//                   - dispatch tables
 	//
+	env = new CgenEnv();
+	env->disp_map->enterscope();
 	code_class_nameTab();
 	code_class_objTab();
 	code_dispTab();
@@ -995,7 +1061,6 @@ void CgenClassTable::code()
 	//                   - the class methods
 	//                   - etc...
 	code_init();
-	env = new CgenEnv();
 	code_method();
 }
 
@@ -1042,31 +1107,27 @@ int CgenNode::get_size() {
 	return obj_size + DEFAULT_OBJFIELDS;
 }
 
+
 void CgenNode::code_dispTab(ostream &s) {
 	s << this->get_name()->get_string() << DISPTAB_SUFFIX << ":" << endl;
 	CgenNodeP cur = this;
-	Stack<char*>* stack = new Stack<char*>(1024);
+	Stack<Method*>* stack = new Stack<Method*>(1024);
 	while (cur) {
 		for (int i = cur->features->len() - 1; i >= 0 ; i--) {
 			if(!cur->features->nth(i)->is_method())
 				continue;
 			// Concatenate
-			char* class_name = cur->get_name()->get_string();
-			char* method_name = cur->features->nth(i)->get_name()->get_string();
-			char* res = new char[strlen(class_name) + strlen(method_name) + 2];
-			strcpy(res, class_name);
-			res[strlen(class_name)] = '.';
-			strcpy(res + strlen(class_name) + 1, method_name);
-
-			stack->push(res);
+			Method* method = new Method(cur->get_name(), cur->features->nth(i)->get_name());
+			stack->push(method);
 		}
 		cur = cur->get_parentnd();
 	}
+	env->disp_map->addid(get_name(), stack->copy());
 	// Print the stack
-	while(!stack->is_empty()) {
-		s << WORD << stack->pop() << endl;
+	while (!stack->is_empty()) {
+		s << WORD << stack->pop()->to_disp_label() << endl;
 	}
-
+	delete stack;
 }
 
 void CgenNode::code_protObj(ostream &s) {
@@ -1112,7 +1173,7 @@ void CgenNode::code_protObj(ostream &s) {
 		}
 		s << 0 << endl;
 	}
-
+	delete stack;
 }
 
 void CgenNode::code_init(ostream& s) {
@@ -1123,7 +1184,6 @@ void CgenNode::code_init(ostream& s) {
 	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
 
 	strcat(parent_init, CLASSINIT_SUFFIX);
-	emit_move(SELF, ACC, s); // store $a0 to $s0
 	if (get_name() != Object)
 		emit_jal(parent_init, s);
 	emit_move(ACC, SELF, s); // return value (return SELF)
@@ -1132,8 +1192,9 @@ void CgenNode::code_init(ostream& s) {
 
 void CgenNode::code_method(ostream& s) {
 	for (int i = features->first(); features->more(i); i = features->next(i)) {
-		if (!features->nth(i)->is_method()) 
+		if (!features->nth(i)->is_method()) {
 			continue;
+		}
 		s << get_name()->get_string() << "." << features->nth(i)->get_name()->get_string() << ":" << endl;
 		features->nth(i)->code(s);
 	}
@@ -1167,6 +1228,32 @@ void static_dispatch_class::code(ostream &s)
 
 void dispatch_class::code(ostream &s)
 {
+	// Push parameters onto the stack
+	for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
+		actual->nth(i)->code(s);
+		emit_store(ACC, 0, SP, s);
+		emit_addiu(SP, SP, -4, s);
+	}
+	expr->code(s);
+
+	// check dispatch abort error
+	emit_bne(ACC, ZERO, label_num, s);
+	// TOCHECK: str_const0 always point to file name?
+	emit_load_address(ACC, "str_const0", s) ;
+	emit_load_imm(T1, this->get_line_number(), s);
+	emit_jal("_dispatch_abort", s);
+	emit_label_def(label_num++, s);
+
+	// Dispatch table
+	emit_load(T1, 2, ACC, s);
+	Symbol expr_type = expr->get_type();
+	// TODO: set expr_type to cur class
+	if (expr_type == SELF_TYPE) {
+		expr_type = Main;
+	}
+	emit_load(T1, env->disp_map->get_method_offset(expr_type, this->name), T1, s);
+	emit_jalr(T1, s);
+
 }
 
 void cond_class::code(ostream &s)
@@ -1183,6 +1270,9 @@ void typcase_class::code(ostream &s)
 
 void block_class::code(ostream &s)
 {
+	for(int i = body->first(); body->more(i); i = body->next(i)) {
+		body->nth(i)->code(s);
+	}
 }
 
 void let_class::code(ostream &s)
@@ -1191,6 +1281,21 @@ void let_class::code(ostream &s)
 
 void plus_class::code(ostream &s)
 {
+	e1->code(s);
+	// Load the int 
+	emit_load(T1,3, ACC, s);
+	emit_store(T1, 0, SP, s);
+	emit_addiu(SP, SP, -4, s);
+	e2->code(s);
+	// Create a new Int address for operation result
+	emit_jal("Object.copy", s);
+	emit_load(T1, 1, SP, s);
+	emit_load(T2, 3, ACC, s);
+	emit_add(T1, T1, T2, s);
+	// Store opeartion result into specified location
+	emit_store(T1, 3, ACC, s);
+
+	emit_addiu(SP, SP, 4, s);
 }
 
 void sub_class::code(ostream &s)
@@ -1207,6 +1312,8 @@ void divide_class::code(ostream &s)
 
 void neg_class::code(ostream &s)
 {
+	e1->code(s);
+	emit_neg(ACC, ACC, s);
 }
 
 void lt_class::code(ostream &s)
@@ -1257,4 +1364,5 @@ void no_expr_class::code(ostream &s)
 
 void object_class::code(ostream &s)
 {
+	emit_move(ACC, SELF, s);
 }

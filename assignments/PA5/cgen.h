@@ -44,6 +44,13 @@ public:
   int size() {
     return num;
   }
+  Stack<T>* copy() {
+    Stack<T>* stack = new Stack<T>(this->num);
+    for (int i = 0; i < this->num; i++) {
+      stack->push(this->elts[i]);
+    }
+    return stack;
+  }
 
 };
 
@@ -141,28 +148,3 @@ public:
     void code_ref(ostream &) const;
 };
 
-
-typedef uint address;
-
-
-class Environment : public SymbolTable<IdEntry, address>{
-};
-
-class Store : public SymbolTable<address, Entry> {
-
-};
-
-class SelfObject {
-};
-
-class CgenEnv {
-public:
-  Environment* E;
-  Store* S;
-  SelfObject* so;
-  CgenEnv() {
-    E = new Environment();
-    S = new Store();
-    so = new SelfObject();
-  }
-};
