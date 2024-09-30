@@ -1204,12 +1204,22 @@ void CgenNode::code_init(ostream& s) {
 	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
 	emit_setup_frame(s);
 
+	// Call parent init method
 	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
 	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
-
 	strcat(parent_init, CLASSINIT_SUFFIX);
 	if (get_name() != Object)
 		emit_jal(parent_init, s);
+
+	// Initialize attributes
+	for (int i = features->first(); features->more(i); i = features->next(i)) {
+		if (features->nth(i)->is_method())
+			continue;
+		features->nth(i)->get_init()->code(s);
+		int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
+		emit_store(ACC, attr_offset, SELF, s);
+	}
+
 	emit_move(ACC, SELF, s); // return value (return SELF)
 	emit_tear_frame(0, s);
 }
@@ -1381,6 +1391,12 @@ void neg_class::code(ostream &s)
 	emit_store(T1, ATTR0_OFFSET, ACC, s);
 }
 
+// 
+// acc <- true value
+// blt label
+// acc <- false value
+// label:
+// [next part]
 void lt_class::code(ostream &s)
 {
 	e1->code(s);
@@ -1440,10 +1456,29 @@ void bool_const_class::code(ostream &s)
 
 void new__class::code(ostream &s)
 {
+	Symbol new_type = type_name;
+	if (new_type == SELF_TYPE)
+		new_type = env->so->get_node()->get_name();
+
+	emit_partial_load_address(ACC, s); s << new_type->get_string() << PROTOBJ_SUFFIX << endl;
+	emit_jal(OBJECT_COPY, s);
+
+	char* class_init = new char(strlen(new_type->get_string()) + strlen(CLASSINIT_SUFFIX));
+	strncpy(class_init, new_type->get_string(), new_type->get_len());
+	strcat(class_init, CLASSINIT_SUFFIX);
+	emit_jal(class_init, s);
+	
 }
 
 void isvoid_class::code(ostream &s)
 {
+	e1->code(s);
+	emit_move(T1, ACC, s);
+	emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl;
+	emit_beqz(T1, label_num, s);
+	emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+
+	emit_label_def(label_num++, s);
 }
 
 void no_expr_class::code(ostream &s)

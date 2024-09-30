@@ -52,6 +52,7 @@ public:
    virtual bool is_method() = 0;
    virtual Symbol get_name() = 0;
    virtual Symbol get_type_decl() = 0;
+   virtual Expression get_init() = 0;
    virtual void code(ostream &s) = 0;
 
 #ifdef Feature_EXTRAS
@@ -194,6 +195,7 @@ public:
    bool is_method() {return true;}
    Symbol get_name() {return name;}
    Symbol get_type_decl() {return NULL;}
+   Expression get_init() {return NULL;}
    void code(ostream& s);
 
 
@@ -223,6 +225,7 @@ public:
    bool is_method() {return false;}
    Symbol get_name() {return name;}
    Symbol get_type_decl() {return type_decl;}
+   Expression get_init() {return init;}
    void code(ostream &s) {return;}
 
 #ifdef Feature_SHARED_EXTRAS
