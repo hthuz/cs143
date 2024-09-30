@@ -160,6 +160,8 @@ class Store : public SymbolTable<Location, Entry> {
 };
 
 // Type => dispatch table(with only method symbol)
+// Bottom: methods of current Object
+// Top: methods of Object
 class DispMap : public SymbolTable<Symbol, Stack<Method*> > {
 public:
 	int get_method_offset(Symbol type, Symbol method) {
@@ -172,7 +174,25 @@ public:
 	}
 };
 
+class AttrMap : public SymbolTable<Symbol, Stack<Feature> > {
+public:
+	int get_attr_offset(Symbol type, Symbol identifer) {
+		Stack<Feature>* stack = this->lookup(type);
+		for (int i = 0; i < stack->size(); i++) {
+			if (stack->at(i)->get_name() == identifer) {
+				return ATTR0_OFFSET + stack->size() - i - 1;
+			}
+		}
+		return -1;
+	}
+};
+
 class SelfObject {
+private:
+	CgenNodeP node;
+public:
+	void set_node(CgenNodeP n) {node = n;}
+	CgenNodeP get_node() {return node;}
 };
 
 class CgenEnv {
@@ -181,11 +201,13 @@ public:
   Store* S;
   SelfObject* so;
   DispMap* disp_map; // type => dispatch table
+  AttrMap* attr_map; // type => attribute(feature)
   CgenEnv() {
     E = new Environment();
     S = new Store();
     so = new SelfObject();
 	disp_map = new DispMap();
+	attr_map = new AttrMap();
   }
 };
 
@@ -1047,6 +1069,7 @@ void CgenClassTable::code()
 	//
 	env = new CgenEnv();
 	env->disp_map->enterscope();
+	env->attr_map->enterscope();
 	code_class_nameTab();
 	code_class_objTab();
 	code_dispTab();
@@ -1147,6 +1170,7 @@ void CgenNode::code_protObj(ostream &s) {
 		}
 		cur = cur->get_parentnd();
 	}
+	env->attr_map->addid(get_name(), stack->copy());
 	while(!stack->is_empty()) {
 		Feature feat = stack->pop();
 		s << WORD;
@@ -1191,6 +1215,7 @@ void CgenNode::code_init(ostream& s) {
 }
 
 void CgenNode::code_method(ostream& s) {
+	env->so->set_node(this);
 	for (int i = features->first(); features->more(i); i = features->next(i)) {
 		if (!features->nth(i)->is_method()) {
 			continue;
@@ -1220,6 +1245,9 @@ void method_class::code(ostream& s) {
 
 void assign_class::code(ostream &s)
 {
+	expr->code(s);
+	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
+	emit_store(ACC,attr_offset, SELF, s );
 }
 
 void static_dispatch_class::code(ostream &s)
@@ -1247,9 +1275,8 @@ void dispatch_class::code(ostream &s)
 	// Dispatch table
 	emit_load(T1, 2, ACC, s);
 	Symbol expr_type = expr->get_type();
-	// TODO: set expr_type to cur class
 	if (expr_type == SELF_TYPE) {
-		expr_type = Main;
+		expr_type = env->so->get_node()->get_name();
 	}
 	emit_load(T1, env->disp_map->get_method_offset(expr_type, this->name), T1, s);
 	emit_jalr(T1, s);
@@ -1277,8 +1304,25 @@ void cond_class::code(ostream &s)
 	emit_label_def(end_label_num, s);
 }
 
+// pred_label:
+// [pred body]
+// beq zero end_label:
+// [loop body]
+// b pred_label
+// end_label:
+
 void loop_class::code(ostream &s)
 {
+	int pred_label_num = label_num++;
+	emit_label_def(pred_label_num, s);
+	pred->code(s);
+	int end_label_num = label_num++;
+	emit_load(T1, ATTR0_OFFSET, ACC, s);
+	emit_beq(T1, ZERO, end_label_num, s);
+
+	body->code(s);
+	emit_branch(pred_label_num, s);
+	emit_label_def(end_label_num, s);
 }
 
 void typcase_class::code(ostream &s)
@@ -1347,13 +1391,14 @@ void lt_class::code(ostream &s)
 
 	// Compare
 	emit_load(T1, 1, SP, s);
-	emit_load(T2, ATTR0_OFFSET, SP, s);
+	emit_load(T2, ATTR0_OFFSET, ACC, s);
 	emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl;
 	emit_blt(T1, T2, label_num, s);
 	emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
 
 	// Next step
 	emit_label_def(label_num++, s);
+	emit_addiu(SP, SP, 4, s);
 }
 
 void eq_class::code(ostream &s)
@@ -1407,5 +1452,13 @@ void no_expr_class::code(ostream &s)
 
 void object_class::code(ostream &s)
 {
-	emit_move(ACC, SELF, s);
+	if (name == self) {
+		emit_move(ACC, SELF, s);
+		return;
+	}
+	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
+	if (attr_offset != -1) {
+		emit_load(ACC, attr_offset, SELF, s);
+		return;
+	}
 }
