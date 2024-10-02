@@ -188,6 +188,10 @@ public:
 	}
 };
 
+// identifier => offset to fp
+class LocalMap : public SymbolTable<Symbol, int> {
+};
+
 class SelfObject {
 private:
 	CgenNodeP node; // class
@@ -206,14 +210,17 @@ public:
   SelfObject* so;
   DispMap* disp_map; // type => dispatch table
   AttrMap* attr_map; // type => attribute(feature)
+  LocalMap* local_map;
   CgenEnv() {
     E = new Environment();
     S = new Store();
     so = new SelfObject();
 	disp_map = new DispMap();
 	attr_map = new AttrMap();
+	local_map = new LocalMap();
 	disp_map->enterscope();
 	attr_map->enterscope();
+	local_map->enterscope();
   }
 };
 
@@ -1351,8 +1358,23 @@ void block_class::code(ostream &s)
 	}
 }
 
+int cur_local = 0;
 void let_class::code(ostream &s)
 {
+	if (cur_local == 0) {
+		env->local_map->enterscope();
+	}
+	int* offset = new int;
+	*offset = cur_local;
+	env->local_map->addid(identifier, offset);
+	init->code(s);
+	emit_store(ACC, cur_local, FP, s);
+	cur_local++;
+	body->code(s);
+	if (!body->is_let_expr()) {
+		cur_local = 0;
+		env->local_map->exitscope();
+	}
 }
 
 void plus_class::code(ostream &s)
@@ -1505,9 +1527,15 @@ void object_class::code(ostream &s)
 	}
 	// method parameter
 	int arg_offset = env->so->get_method()->get_arg_offset(name);
+	int local_num = env->so->get_method()->get_local_var_num();
 	if (arg_offset != -1) {
-		emit_load(ACC, arg_offset, FP, s);
+		emit_load(ACC, local_num + arg_offset, FP, s);
 		return;
+	}
+	// local variable from let
+	int* local_offset = env->local_map->lookup(name);
+	if (local_offset != NULL)  {
+		emit_load(ACC, *local_offset, FP, s);
 	}
 }
 

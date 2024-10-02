@@ -154,8 +154,15 @@ Write-up for PA5
 
 Stack structure
 
-[local variable]
-[return address] <- fp
+[local variable] <- fp
+[return address]
 [old self]
 [old fp]
 [function arguments]
+
+
+local variable =>
+first var <-fp
+second var
+...
+last var
