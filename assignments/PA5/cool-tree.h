@@ -55,6 +55,7 @@ public:
    virtual Expression get_init() = 0;
    virtual int get_arg_offset(Symbol arg) = 0;
    virtual void code(ostream &s) = 0;
+   virtual int get_local_var_num() = 0;
 
 #ifdef Feature_EXTRAS
    Feature_EXTRAS
@@ -84,7 +85,8 @@ class Expression_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
-
+   virtual bool is_let_expr() {return false;}
+   virtual int get_local_var_num() {return 0;}
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
 #endif
@@ -200,6 +202,7 @@ public:
    Expression get_init() {return NULL;}
    int get_arg_offset(Symbol arg);
    void code(ostream& s);
+   int get_local_var_num() {return expr->get_local_var_num();}
 
 
 #ifdef Feature_SHARED_EXTRAS
@@ -231,6 +234,7 @@ public:
    Expression get_init() {return init;}
    int get_arg_offset(Symbol arg) {return -1;}
    void code(ostream &s) {return;}
+   int get_local_var_num() {return init->get_local_var_num();}
 
 #ifdef Feature_SHARED_EXTRAS
    Feature_SHARED_EXTRAS
@@ -438,6 +442,14 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      int max_num = 0;
+      for (int i = body->first(); body->more(i); i = body->next(i)) {
+         int num = body->nth(i)->get_local_var_num();
+         max_num = num > max_num ? num : max_num;
+      }
+      return max_num;
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -464,6 +476,8 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   bool is_let_expr() {return true;}
+   int get_local_var_num() {return 1 + body->get_local_var_num();}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

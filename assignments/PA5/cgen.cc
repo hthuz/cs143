@@ -490,27 +490,27 @@ static void emit_gc_check(char *source, ostream &s)
 	s << JAL << "_gc_check" << endl;
 }
 
-static void emit_setup_frame(ostream &s)
+static void emit_setup_frame(int num_local, ostream &s)
 {
 	// allocate stack
-	emit_addiu(SP, SP, -3 * WORD_SIZE, s);
+	emit_addiu(SP, SP, -(3 + num_local) * WORD_SIZE, s);
 	// store old $fp, $s0 and $ra
-	emit_store(FP, 3 , SP, s);
-	emit_store(SELF, 2, SP, s);
-	emit_store(RA, 1, SP, s);
+	emit_store(FP, 3 + num_local , SP, s);
+	emit_store(SELF, 2 + num_local, SP, s);
+	emit_store(RA, 1 + num_local, SP, s);
 	// setup new $fp and $s0
 	emit_addiu(FP, SP, WORD_SIZE, s);
 	emit_move(SELF, ACC, s); // store $a0 to $s0
 }
 
-static void emit_tear_frame(int num_args, ostream &s)
+static void emit_tear_frame(int num_local, int num_args, ostream &s)
 {
 	// restore $fp, $s0 and $ra
-	emit_load(FP, 3, SP, s);
-	emit_load(SELF,2, SP, s);
-	emit_load(RA, 1, SP, s);
+	emit_load(FP, 3 + num_local, SP, s);
+	emit_load(SELF,2 + num_local, SP, s);
+	emit_load(RA, 1 + num_local + num_args, SP, s);
 	// deallocate stack
-	emit_addiu(SP, SP, (3 + num_args) * WORD_SIZE, s);
+	emit_addiu(SP, SP, (3 + num_local + num_args) * WORD_SIZE, s);
 	// jump to return address
 	emit_return(s);
 }
@@ -1206,7 +1206,7 @@ void CgenNode::code_protObj(ostream &s) {
 
 void CgenNode::code_init(ostream& s) {
 	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
-	emit_setup_frame(s);
+	emit_setup_frame(0, s);
 
 	// Call parent init method
 	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
@@ -1225,7 +1225,7 @@ void CgenNode::code_init(ostream& s) {
 	}
 
 	emit_move(ACC, SELF, s); // return value (return SELF)
-	emit_tear_frame(0, s);
+	emit_tear_frame(0, 0, s);
 }
 
 void CgenNode::code_method(ostream& s) {
@@ -1242,9 +1242,9 @@ void CgenNode::code_method(ostream& s) {
 
 
 void method_class::code(ostream& s) {
-	emit_setup_frame(s);
+	emit_setup_frame(env->so->get_method()->get_local_var_num(), s);
 	expr->code(s);
-	emit_tear_frame(formals->len(),s);
+	emit_tear_frame(env->so->get_method()->get_local_var_num(), formals->len(),s);
 }
 
 
