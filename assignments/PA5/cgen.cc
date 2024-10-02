@@ -1255,8 +1255,10 @@ void CgenNode::code_init(ostream& s) {
 		if (features->nth(i)->is_method())
 			continue;
 		features->nth(i)->get_init()->code(s);
-		int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
-		emit_store(ACC, attr_offset, SELF, s);
+		if (!features->nth(i)->get_init()->is_no_expr()) {
+			int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
+			emit_store(ACC, attr_offset, SELF, s);
+		}
 	}
 
 	emit_move(ACC, SELF, s); // return value (return SELF)

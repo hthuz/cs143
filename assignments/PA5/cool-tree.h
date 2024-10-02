@@ -86,6 +86,7 @@ public:
    tree_node *copy()		 { return copy_Expression(); }
    virtual Expression copy_Expression() = 0;
    virtual bool is_let_expr() {return false;}
+   virtual bool is_no_expr() {return false;}
    virtual int get_local_var_num() {return 0;}
 #ifdef Expression_EXTRAS
    Expression_EXTRAS
@@ -804,6 +805,7 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   bool is_no_expr() {return true;}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
