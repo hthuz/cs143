@@ -85,7 +85,6 @@ private:
     void code_dispTab();
     void code_protObj();
     void code_init();
-    void code_method();
 
     // The following creates an inheritance graph from
     // a list of classes.  The graph is implemented as
@@ -107,6 +106,13 @@ public:
     CgenClassTable(Classes, ostream &str);
     void code();
     CgenNodeP root();
+    CgenNode* get_node_by_type(Symbol type);
+    // Why code_method needs to be public:
+    // in code_method case expr requires inheritance graph of classtable
+    // so it needs to refer to classtable.
+    // classtable must be initialized before case expr can access it
+    // so put code_method separately instead of inside its constructor
+    void code_method(); 
 };
 
 class CgenNode : public class__class
@@ -132,6 +138,25 @@ public:
 
     int get_class_tag() {return class_tag;}
     void set_class_tag(int tag) {class_tag = tag;}
+    CgenNodeP get_max_tag_child() {
+      Stack<CgenNodeP>* stack = new Stack<CgenNodeP>(1024);
+      stack->push(this);
+      int max_tag = this->class_tag;
+      CgenNodeP max_child;
+      CgenNodeP node;
+
+      while (!stack->is_empty()) {
+        node = stack->pop();
+        if (node->get_class_tag() >= max_tag) {
+          max_child = node;
+          max_tag = node->get_class_tag();
+        }
+        for(List<CgenNode>* l = node->get_children(); l; l = l->tl()) {
+          stack->push(l->hd());
+        }
+      }
+      return max_child;
+    }
     int get_size();
     void code_dispTab(ostream& s);
     void code_protObj(ostream& s);

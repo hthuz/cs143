@@ -100,6 +100,9 @@ class Case_class : public tree_node {
 public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
+   virtual Expression get_expr() = 0;
+   virtual Symbol get_name() = 0;
+   virtual Symbol get_type_decl() = 0;
 
 #ifdef Case_EXTRAS
    Case_EXTRAS
@@ -282,6 +285,9 @@ public:
    }
    Case copy_Case();
    void dump(ostream& stream, int n);
+   Expression get_expr() {return expr;}
+   Symbol get_name() {return name;}
+   Symbol get_type_decl() {return type_decl;}
 
 #ifdef Case_SHARED_EXTRAS
    Case_SHARED_EXTRAS
@@ -422,6 +428,14 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      int max_num = 0;
+      for(int i = cases->first(); cases->more(i); i = cases->next(i)) {
+         int num = cases->nth(i)->get_expr()->get_local_var_num();
+         max_num = num > max_num ? num : max_num;
+      }
+      return max_num > 1 ? max_num : 1;
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS

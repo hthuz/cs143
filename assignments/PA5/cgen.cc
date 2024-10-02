@@ -225,6 +225,7 @@ public:
 };
 
 CgenEnv* env;
+CgenClassTable* codegen_classtable;
 int label_num = 0;
 
 void program_class::cgen(ostream &os)
@@ -233,7 +234,8 @@ void program_class::cgen(ostream &os)
 	os << "# start of generated code\n";
 
 	initialize_constants();
-	CgenClassTable *codegen_classtable = new CgenClassTable(classes, os);
+	codegen_classtable = new CgenClassTable(classes, os);
+	codegen_classtable->code_method();
 
 	os << "\n# end of generated code\n";
 }
@@ -795,9 +797,9 @@ void CgenClassTable::code_constants()
 	stringtable.add_string("");
 	inttable.add_string("0");
 
-	stringtable.code_string_table(str, stringclasstag);
-	inttable.code_string_table(str, intclasstag);
-	code_bools(boolclasstag);
+	stringtable.code_string_table(str, get_node_by_type(Str)->get_class_tag());
+	inttable.code_string_table(str, get_node_by_type(Int)->get_class_tag());
+	code_bools(get_node_by_type(Bool)->get_class_tag());
 }
 
 void CgenClassTable::code_class_nameTab()
@@ -861,11 +863,11 @@ void CgenClassTable::code_method()
 
 CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 {
-	objectclasstag = 0;
-	ioclasstag = 1;
-	intclasstag = 2 /* Change to your Int class tag here */;
-	boolclasstag = 3 /* Change to your Bool class tag here */;
-	stringclasstag = 4 /* Change to your String class tag here */;
+	// objectclasstag = 0;
+	// ioclasstag = 1;
+	// intclasstag = 2 /* Change to your Int class tag here */;
+	// boolclasstag = 3 /* Change to your Bool class tag here */;
+	// stringclasstag = 4 /* Change to your String class tag here */;
 
 	enterscope();
 	if (cgen_debug)
@@ -1066,7 +1068,7 @@ void CgenClassTable::set_class_tag() {
 			stack->push(l->hd());
 		}
 	}
-
+	total_class_tag_num = cur_tag;
 }
 
 void CgenNode::add_child(CgenNodeP n)
@@ -1115,13 +1117,20 @@ void CgenClassTable::code()
 	//                   - the class methods
 	//                   - etc...
 	code_init();
-	code_method();
 }
 
 
 CgenNode* CgenClassTable::get_node_by_class_tag(int class_tag) {
 	for(List<CgenNode> *l = nds; l; l=l->tl()) {
 		if (l->hd()->get_class_tag() == class_tag) 
+			return l->hd();
+	}
+	return NULL;
+}
+
+CgenNode* CgenClassTable::get_node_by_type(Symbol type) {
+	for(List<CgenNode> *l = nds; l; l = l->tl()) {
+		if(l->hd()->get_name() == type)
 			return l->hd();
 	}
 	return NULL;
@@ -1366,8 +1375,84 @@ void loop_class::code(ostream &s)
 	emit_label_def(end_label_num, s);
 }
 
+// bne zero case1_label
+// [abort2 body]
+// case1_label
+//     			 => blt, bgt case2_label
+// 				 => branch end_label
+// case2_label
+//  			 => blt, bgt abort_label
+// 				 => branch end_label
+// abort_label
+// [abort label]
+// end_label
+// [end body]
+
+int cur_local = 0;
 void typcase_class::code(ostream &s)
 {
+	int end_label = label_num++;
+	expr->code(s);
+	// abort2 body
+	emit_bne(ACC, ZERO, label_num, s);
+	emit_load_address(ACC, "str_const0", s);
+	emit_load_imm(T1, this->get_line_number(), s);
+	emit_jal(CASE_ABORT2, s);
+
+
+	// local variable
+	if (cur_local == 0) {
+		env->local_map->enterscope();
+	}
+	// Show select case based on class tag in descending order. selection sort
+	int prev_max_tag = 1024;
+	bool local_added_flag = false;
+	for(int k = 0; k < cases->len(); k++) {
+
+		CgenNodeP max_node = codegen_classtable->get_node_by_type(Object);
+		Case max_case;
+		for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+			CgenNodeP node = codegen_classtable->get_node_by_type(cases->nth(i)->get_type_decl());
+			if (node->get_class_tag() > max_node->get_class_tag() && node->get_class_tag() < prev_max_tag) {
+				max_case = cases->nth(i);
+				max_node = node;
+			}
+		}
+		emit_label_def(label_num, s);
+		emit_load(T1, TAG_OFFSET, ACC, s);
+		label_num++;
+		emit_blti(T1,max_node->get_class_tag(),label_num, s);
+		emit_bgti(T1, max_node->get_max_tag_child()->get_class_tag(), label_num, s);
+
+		int* offset;
+		// allocate space for expr
+		if (!local_added_flag) {
+			offset = new int(cur_local);
+			env->local_map->addid(max_case->get_name(), offset);
+			cur_local++;
+			local_added_flag = true;
+		}
+		emit_store(ACC, *offset, FP, s);
+
+		max_case->get_expr()->code(s);
+		emit_branch(end_label, s);
+
+		// update
+		prev_max_tag = max_node->get_class_tag();
+
+	}
+	if (--cur_local == 0) {
+		env->local_map->exitscope();
+	}
+
+	// abort body
+	emit_label_def(label_num, s);
+	emit_jal(CASE_ABORT, s);
+
+	// end label
+	emit_label_def(end_label, s);
+
+
 }
 
 void block_class::code(ostream &s)
@@ -1376,22 +1461,18 @@ void block_class::code(ostream &s)
 		body->nth(i)->code(s);
 	}
 }
-
-int cur_local = 0;
 void let_class::code(ostream &s)
 {
 	if (cur_local == 0) {
 		env->local_map->enterscope();
 	}
-	int* offset = new int;
-	*offset = cur_local;
+	int* offset = new int(cur_local);
 	env->local_map->addid(identifier, offset);
 	init->code(s);
-	emit_store(ACC, cur_local, FP, s);
+	emit_store(ACC, *offset, FP, s);
 	cur_local++;
 	body->code(s);
-	if (!body->is_let_expr()) {
-		cur_local = 0;
+	if (--cur_local == 0) {
 		env->local_map->exitscope();
 	}
 }
