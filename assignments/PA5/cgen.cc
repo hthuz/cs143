@@ -873,6 +873,7 @@ CgenClassTable::CgenClassTable(Classes classes, ostream &s) : nds(NULL), str(s)
 	install_basic_classes();
 	install_classes(classes);
 	build_inheritance_tree();
+	set_class_tag();
 
 	code();
 	exitscope();
@@ -896,13 +897,13 @@ void CgenClassTable::install_basic_classes()
 	//
 	addid(No_class,
 		  new CgenNode(class_(No_class, No_class, nil_Features(), filename),
-					   Basic, this, -1));
+					   Basic, this));
 	addid(SELF_TYPE,
 		  new CgenNode(class_(SELF_TYPE, No_class, nil_Features(), filename),
-					   Basic, this, -1));
+					   Basic, this));
 	addid(prim_slot,
 		  new CgenNode(class_(prim_slot, No_class, nil_Features(), filename),
-					   Basic, this, -1));
+					   Basic, this));
 
 	//
 	// The Object class has no parent class. Its methods are
@@ -923,7 +924,7 @@ void CgenClassTable::install_basic_classes()
 						   single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 					   single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 				   filename),
-			Basic, this, 0));
+			Basic, this));
 
 	//
 	// The IO class inherits from Object. Its methods are
@@ -946,7 +947,7 @@ void CgenClassTable::install_basic_classes()
 						   single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 					   single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 				   filename),
-			Basic, this, 1));
+			Basic, this));
 
 	//
 	// The Int class has no methods and only a single attribute, the
@@ -958,7 +959,7 @@ void CgenClassTable::install_basic_classes()
 				   Object,
 				   single_Features(attr(val, prim_slot, no_expr())),
 				   filename),
-			Basic, this, 2));
+			Basic, this));
 
 	//
 	// Bool also has only the "val" slot.
@@ -966,7 +967,7 @@ void CgenClassTable::install_basic_classes()
 	install_class(
 		new CgenNode(
 			class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())), filename),
-			Basic, this, 3));
+			Basic, this));
 
 	//
 	// The class Str has a number of slots and operations:
@@ -997,7 +998,7 @@ void CgenClassTable::install_basic_classes()
 											  Str,
 											  no_expr()))),
 				   filename),
-			Basic, this, 4));
+			Basic, this));
 }
 
 // CgenClassTable::install_class
@@ -1022,9 +1023,8 @@ void CgenClassTable::install_class(CgenNodeP nd)
 
 void CgenClassTable::install_classes(Classes cs)
 {
-	total_class_tag_num = 5;
 	for (int i = cs->first(); cs->more(i); i = cs->next(i))
-		install_class(new CgenNode(cs->nth(i), NotBasic, this, total_class_tag_num++));
+		install_class(new CgenNode(cs->nth(i), NotBasic, this));
 }
 
 //
@@ -1047,6 +1047,26 @@ void CgenClassTable::set_relations(CgenNodeP nd)
 	CgenNode *parent_node = probe(nd->get_parent());
 	nd->set_parentnd(parent_node);
 	parent_node->add_child(nd);
+}
+
+void CgenClassTable::set_class_tag() {
+	probe(No_class)->set_class_tag(-1);
+	probe(prim_slot)->set_class_tag(-1);
+	probe(SELF_TYPE)->set_class_tag(-1);
+
+	Stack<CgenNodeP>* stack = new Stack<CgenNodeP>(1024);
+	int cur_tag = 0;
+	CgenNodeP root = this->root();
+	CgenNodeP node;
+	stack->push(root);
+	while(!stack->is_empty()) {
+		node = stack->pop();
+		node->set_class_tag(cur_tag++);
+		for(List<CgenNode>* l = node->get_children(); l ; l = l->tl()) {
+			stack->push(l->hd());
+		}
+	}
+
 }
 
 void CgenNode::add_child(CgenNodeP n)
@@ -1118,11 +1138,10 @@ CgenNodeP CgenClassTable::root()
 //
 ///////////////////////////////////////////////////////////////////////
 
-CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct, int class_tag) : class__class((const class__class &)*nd),
+CgenNode::CgenNode(Class_ nd, Basicness bstatus, CgenClassTableP ct) : class__class((const class__class &)*nd),
 																	   parentnd(NULL),
 																	   children(NULL),
-																	   basic_status(bstatus),
-																	   class_tag(class_tag)
+																	   basic_status(bstatus)
 {
 	stringtable.add_string(name->get_string()); // Add class name to string table
 }

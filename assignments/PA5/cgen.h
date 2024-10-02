@@ -97,6 +97,7 @@ private:
     void install_classes(Classes cs);
     void build_inheritance_tree();
     void set_relations(CgenNodeP nd);
+    void set_class_tag();
     
 
     // auxiliary methods
@@ -120,8 +121,8 @@ private:
 public:
     CgenNode(Class_ c,
              Basicness bstatus,
-             CgenClassTableP class_table,
-             int class_tag);
+             CgenClassTableP class_table
+            );
 
     void add_child(CgenNodeP child);
     List<CgenNode> *get_children() { return children; }
@@ -130,6 +131,7 @@ public:
     int basic() { return (basic_status == Basic); }
 
     int get_class_tag() {return class_tag;}
+    void set_class_tag(int tag) {class_tag = tag;}
     int get_size();
     void code_dispTab(ostream& s);
     void code_protObj(ostream& s);
