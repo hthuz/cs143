@@ -152,7 +152,7 @@ Instructions
 Write-up for PA5
 ----------------
 
-Stack structure
+## Stack structure
 
 [local variable] <- fp
 [return address]
@@ -166,3 +166,7 @@ first var <-fp
 second var
 ...
 last var
+
+## Class tag
+use dfs to label tag
+then can evaluate case based on if smaller than current tag, larger than largest tag among children

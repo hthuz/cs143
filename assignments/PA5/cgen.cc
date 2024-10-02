@@ -1296,8 +1296,27 @@ void method_class::code(ostream& s) {
 void assign_class::code(ostream &s)
 {
 	expr->code(s);
+	// local variable from let
+	int* local_offset = env->local_map->lookup(name);
+	if (local_offset != NULL)  {
+		emit_store(ACC, *local_offset, FP, s);
+	}
+
+	// method parameter
+	int arg_offset = env->so->get_method()->get_arg_offset(name);
+	int local_num = env->so->get_method()->get_local_var_num();
+	if (arg_offset != -1) {
+		emit_store(ACC, local_num + arg_offset, FP, s);
+		return;
+	}
+
+	// attribute
 	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
-	emit_store(ACC,attr_offset, SELF, s );
+	if (attr_offset != -1) {
+		emit_store(ACC,attr_offset, SELF, s );
+		return;
+	}
+
 }
 
 void static_dispatch_class::code(ostream &s)
@@ -1721,11 +1740,10 @@ void object_class::code(ostream &s)
 		emit_move(ACC, SELF, s);
 		return;
 	}
-	// object attribute
-	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
-	if (attr_offset != -1) {
-		emit_load(ACC, attr_offset, SELF, s);
-		return;
+	// local variable from let
+	int* local_offset = env->local_map->lookup(name);
+	if (local_offset != NULL)  {
+		emit_load(ACC, *local_offset, FP, s);
 	}
 	// method parameter
 	int arg_offset = env->so->get_method()->get_arg_offset(name);
@@ -1734,10 +1752,11 @@ void object_class::code(ostream &s)
 		emit_load(ACC, local_num + arg_offset, FP, s);
 		return;
 	}
-	// local variable from let
-	int* local_offset = env->local_map->lookup(name);
-	if (local_offset != NULL)  {
-		emit_load(ACC, *local_offset, FP, s);
+	// object attribute
+	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
+	if (attr_offset != -1) {
+		emit_load(ACC, attr_offset, SELF, s);
+		return;
 	}
 }
 
