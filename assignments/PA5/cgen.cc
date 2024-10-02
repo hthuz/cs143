@@ -517,7 +517,7 @@ static void emit_tear_frame(int num_local, int num_args, ostream &s)
 	// restore $fp, $s0 and $ra
 	emit_load(FP, 3 + num_local, SP, s);
 	emit_load(SELF,2 + num_local, SP, s);
-	emit_load(RA, 1 + num_local + num_args, SP, s);
+	emit_load(RA, 1 + num_local, SP, s);
 	// deallocate stack
 	emit_addiu(SP, SP, (3 + num_local + num_args) * WORD_SIZE, s);
 	// jump to return address
