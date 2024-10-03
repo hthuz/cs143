@@ -1524,7 +1524,21 @@ void let_class::code(ostream &s)
 	}
 	int* offset = new int(cur_local);
 	env->local_map->addid(identifier, offset);
-	init->code(s);
+	if (init->is_no_expr()) {
+		if (type_decl == Int) {
+			char default_int[] = "0";
+			emit_partial_load_address(ACC, s); inttable.lookup_string(default_int)->code_ref(s); s << endl;
+		} else if (type_decl == Str) {
+			char default_str[] = "";
+			emit_partial_load_address(ACC, s); stringtable.lookup_string(default_str)->code_ref(s); s << endl;
+		} else if (type_decl == Bool) {
+			emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+		} else {
+			emit_move(ACC, ZERO, s);
+		}
+	} else {
+		init->code(s);
+	}
 	emit_store(ACC, *offset, FP, s);
 	cur_local++;
 	body->code(s);
@@ -1743,7 +1757,6 @@ void isvoid_class::code(ostream &s)
 
 void no_expr_class::code(ostream &s)
 {
-	emit_move(ACC, ZERO, s);
 }
 
 void object_class::code(ostream &s)
