@@ -1190,7 +1190,7 @@ void CgenNode::code_dispTab(ostream &s) {
 			Method* method = new Method(cur->get_name(), cur->features->nth(i)->get_name());
 			Method** equal_elt_ptr = stack->equal_elt(method, equal_method_name);
 			if (equal_elt_ptr != NULL ) {
-				Method* equal_elt = new Method({NULL, NULL});
+				Method* equal_elt = new Method(NULL, NULL);
 				equal_elt = *equal_elt_ptr;
 				stack->pop_elt(equal_elt);
 				stack->push(equal_elt);
@@ -1477,6 +1477,7 @@ void typcase_class::code(ostream &s)
 	// Show select case based on class tag in descending order. selection sort
 	int prev_max_tag = 1024;
 	bool local_added_flag = false;
+	int next_case_label = label_num;
 	for(int k = 0; k < cases->len(); k++) {
 
 		CgenNodeP max_node = codegen_classtable->get_node_by_type(Object);
@@ -1488,11 +1489,13 @@ void typcase_class::code(ostream &s)
 				max_node = node;
 			}
 		}
-		emit_label_def(label_num, s);
+		emit_label_def(next_case_label, s);
 		emit_load(T1, TAG_OFFSET, ACC, s);
 		label_num++;
-		emit_blti(T1,max_node->get_class_tag(),label_num, s);
-		emit_bgti(T1, max_node->get_max_tag_child()->get_class_tag(), label_num, s);
+		next_case_label = label_num;
+		emit_blti(T1,max_node->get_class_tag(),next_case_label, s);
+		emit_bgti(T1, max_node->get_max_tag_child()->get_class_tag(), next_case_label, s);
+		label_num++;
 
 		int* offset;
 		// allocate space for expr
@@ -1516,7 +1519,7 @@ void typcase_class::code(ostream &s)
 	}
 
 	// abort body
-	emit_label_def(label_num, s);
+	emit_label_def(next_case_label, s);
 	emit_jal(CASE_ABORT, s);
 
 	// end label
