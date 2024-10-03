@@ -1693,6 +1693,25 @@ void lt_class::code(ostream &s)
 
 void eq_class::code(ostream &s)
 {
+	if (e1->get_type() != Int && e1->get_type() != Str && e1->get_type() != Bool) {
+		e1->code(s);
+		emit_store(ACC, 0, SP, s);
+		emit_addiu(SP, SP, -4, s);
+		e2->code(s);
+
+		// Compare
+		emit_load(T1, 1, SP, s);
+		emit_move(T2, ACC, s);
+		emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl;
+		emit_beq(T1, T2, label_num, s);
+		emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+
+		// Next step
+		emit_label_def(label_num++, s);
+		emit_addiu(SP, SP, 4, s);
+		return;
+	}
+
 	e1->code(s);
 	emit_load(T1, ATTR0_OFFSET, ACC, s);
 	emit_store(T1, 0, SP, s);
