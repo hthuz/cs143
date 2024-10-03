@@ -1442,6 +1442,7 @@ void loop_class::code(ostream &s)
 	body->code(s);
 	emit_branch(pred_label_num, s);
 	emit_label_def(end_label_num, s);
+	emit_move(ACC, ZERO, s);
 }
 
 // bne zero case1_label
