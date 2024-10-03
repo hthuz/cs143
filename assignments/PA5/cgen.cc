@@ -28,6 +28,8 @@
 extern void emit_string_constant(ostream &str, char *s);
 extern int cgen_debug;
 
+#define INIT_METHOD NULL
+
 //
 // Three symbols from the semantic analyzer (semant.cc) are used.
 // If e : No_type, then no code is generated for e.
@@ -410,6 +412,8 @@ static void emit_beq(char *src1, char *src2, int label, ostream &s)
 	s << BEQ << src1 << " " << src2 << " ";
 	emit_label_ref(label, s);
 	s << endl;
+	
+#define INIT_METHOD NULL
 }
 
 static void emit_bne(char *src1, char *src2, int label, ostream &s)
@@ -1240,6 +1244,8 @@ void CgenNode::code_protObj(ostream &s) {
 }
 
 void CgenNode::code_init(ostream& s) {
+	env->so->set_node(this);
+	env->so->set_method(INIT_METHOD);
 	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
 	emit_setup_frame(0, s);
 
@@ -1305,11 +1311,13 @@ void assign_class::code(ostream &s)
 	}
 
 	// method parameter
-	int arg_offset = env->so->get_method()->get_arg_offset(name);
-	int local_num = env->so->get_method()->get_local_var_num();
-	if (arg_offset != -1) {
-		emit_store(ACC, local_num + arg_offset, FP, s);
-		return;
+	if (env->so->get_method() != INIT_METHOD) {
+		int arg_offset = env->so->get_method()->get_arg_offset(name);
+		int local_num = env->so->get_method()->get_local_var_num();
+		if (arg_offset != -1) {
+			emit_store(ACC, local_num + arg_offset, FP, s);
+			return;
+		}
 	}
 
 	// attribute
@@ -1748,11 +1756,13 @@ void object_class::code(ostream &s)
 		emit_load(ACC, *local_offset, FP, s);
 	}
 	// method parameter
-	int arg_offset = env->so->get_method()->get_arg_offset(name);
-	int local_num = env->so->get_method()->get_local_var_num();
-	if (arg_offset != -1) {
-		emit_load(ACC, local_num + arg_offset, FP, s);
-		return;
+	if (env->so->get_method() != INIT_METHOD) {
+		int arg_offset = env->so->get_method()->get_arg_offset(name);
+		int local_num = env->so->get_method()->get_local_var_num();
+		if (arg_offset != -1) {
+			emit_load(ACC, local_num + arg_offset, FP, s);
+			return;
+		}
 	}
 	// object attribute
 	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
