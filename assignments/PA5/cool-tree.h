@@ -11,7 +11,7 @@
 
 #include "tree.h"
 #include "cool-tree.handcode.h"
-
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 // define the class for phylum
 // define simple phylum - Program
@@ -311,6 +311,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return expr->get_local_var_num();
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -337,6 +340,13 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      int max_actual_num = 0;
+      for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+         max_actual_num = MAX(max_actual_num, actual->nth(i)->get_local_var_num());
+      }
+      return MAX(expr->get_local_var_num(), max_actual_num);
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -361,6 +371,13 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      int max_actual_num = 0;
+      for(int i = actual->first(); actual->more(i); i = actual->next(i)) {
+         max_actual_num = MAX(max_actual_num, actual->nth(i)->get_local_var_num());
+      }
+      return MAX(expr->get_local_var_num(), max_actual_num);
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -385,6 +402,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(MAX(pred->get_local_var_num(), then_exp->get_local_var_num()), else_exp->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -407,6 +427,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(pred->get_local_var_num(), body->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -492,7 +515,7 @@ public:
    Expression copy_Expression();
    void dump(ostream& stream, int n);
    bool is_let_expr() {return true;}
-   int get_local_var_num() {return 1 + body->get_local_var_num();}
+   int get_local_var_num() {return 1 + MAX(init->get_local_var_num(), body->get_local_var_num());}
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -515,6 +538,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -537,6 +563,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -559,6 +588,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -581,6 +613,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -601,6 +636,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return e1->get_local_var_num();
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -623,6 +661,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -645,6 +686,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -667,6 +711,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return MAX(e1->get_local_var_num(), e2->get_local_var_num());
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -687,6 +734,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return e1->get_local_var_num();
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
@@ -787,6 +837,9 @@ public:
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
+   int get_local_var_num() {
+      return e1->get_local_var_num();
+   }
 
 #ifdef Expression_SHARED_EXTRAS
    Expression_SHARED_EXTRAS
