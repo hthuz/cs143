@@ -52,6 +52,37 @@ public:
     return stack;
   }
 
+  T* equal_elt(T elt, bool (*compare)(T,T) ) {
+    for(int i = 0; i < num; i++) {
+      if (compare(elts[i], elt)) {
+        return &elts[i];
+      }
+    }
+    return NULL;
+  }
+
+  // void swap(T& elt1, T& elt2) {
+  //   T& tmp = elt1;
+  //   elt1 = elt2;
+  //   elt2 = tmp;
+  // }
+
+  void pop_elt(T elt) {
+    for(int i = 0; i < num; i++) {
+      if (elts[i] == elt) {
+        if (i == num-1) {
+          pop();
+          return;
+        }
+
+        for (int j = i; j < num - 1; j++) {
+          elts[j] = elts[j + 1];
+        }
+        break;
+      }
+    }
+    num--;
+  }
 };
 
 class CgenClassTable;

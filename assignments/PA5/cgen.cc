@@ -150,6 +150,10 @@ public:
   }
 };
 
+bool equal_method_name(Method* m1, Method* m2) {
+	return (m1->method_name == m2->method_name);
+}
+
 class Location{
 public:
 
@@ -1184,7 +1188,15 @@ void CgenNode::code_dispTab(ostream &s) {
 				continue;
 			// Concatenate
 			Method* method = new Method(cur->get_name(), cur->features->nth(i)->get_name());
-			stack->push(method);
+			Method** equal_elt_ptr = stack->equal_elt(method, equal_method_name);
+			if (equal_elt_ptr != NULL ) {
+				Method* equal_elt = new Method({NULL, NULL});
+				equal_elt = *equal_elt_ptr;
+				stack->pop_elt(equal_elt);
+				stack->push(equal_elt);
+			} else {
+				stack->push(method);
+			}
 		}
 		cur = cur->get_parentnd();
 	}
@@ -1384,6 +1396,7 @@ void dispatch_class::code(ostream &s)
 	if (expr_type == SELF_TYPE) {
 		expr_type = env->so->get_node()->get_name();
 	}
+	// cout << "name: " << name->get_string() << " " << "expr_type: " << expr_type->get_string() << endl;
 	emit_load(T1, env->disp_map->get_method_offset(expr_type, this->name), T1, s);
 	emit_jalr(T1, s);
 
@@ -1781,6 +1794,7 @@ void object_class::code(ostream &s)
 		}
 	}
 	// object attribute
+	// cout << "object " << name->get_string() << " class" <<  env->so->get_node()->get_name()->get_string() << endl;
 	int attr_offset = env->attr_map->get_attr_offset(env->so->get_node()->get_name(), name);
 	if (attr_offset != -1) {
 		emit_load(ACC, attr_offset, SELF, s);
