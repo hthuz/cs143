@@ -1322,6 +1322,7 @@ void assign_class::code(ostream &s)
 	int* local_offset = env->local_map->lookup(name);
 	if (local_offset != NULL)  {
 		emit_store(ACC, *local_offset, FP, s);
+		return;
 	}
 
 	// method parameter
@@ -1546,11 +1547,7 @@ void block_class::code(ostream &s)
 }
 void let_class::code(ostream &s)
 {
-	if (cur_local == 0) {
-		env->local_map->enterscope();
-	}
-	int* offset = new int(cur_local);
-	env->local_map->addid(identifier, offset);
+	// init expr
 	if (init->is_no_expr()) {
 		if (type_decl == Int) {
 			char default_int[] = "0";
@@ -1566,8 +1563,16 @@ void let_class::code(ostream &s)
 	} else {
 		init->code(s);
 	}
+
+	// allocate a new space
+	if (cur_local == 0) {
+		env->local_map->enterscope();
+	}
+	int* offset = new int(cur_local);
+	env->local_map->addid(identifier, offset);
 	emit_store(ACC, *offset, FP, s);
 	cur_local++;
+
 	body->code(s);
 	if (--cur_local == 0) {
 		env->local_map->exitscope();
@@ -1812,6 +1817,7 @@ void object_class::code(ostream &s)
 	int* local_offset = env->local_map->lookup(name);
 	if (local_offset != NULL)  {
 		emit_load(ACC, *local_offset, FP, s);
+		return;
 	}
 	// method parameter
 	if (env->so->get_method() != INIT_METHOD) {
