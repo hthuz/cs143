@@ -1396,7 +1396,7 @@ void dispatch_class::code(ostream &s)
 	if (expr_type == SELF_TYPE) {
 		expr_type = env->so->get_node()->get_name();
 	}
-	// cout << "name: " << name->get_string() << " " << "expr_type: " << expr_type->get_string() << endl;
+	// cout << "name: " << name->get_string() << " " << "expr_type: " << expr_type->get_string() << " offset " << env->disp_map->get_method_offset(expr_type, this->name)<<  endl;
 	emit_load(T1, env->disp_map->get_method_offset(expr_type, this->name), T1, s);
 	emit_jalr(T1, s);
 
@@ -1744,8 +1744,23 @@ void bool_const_class::code(ostream &s)
 void new__class::code(ostream &s)
 {
 	Symbol new_type = type_name;
-	if (new_type == SELF_TYPE)
-		new_type = env->so->get_node()->get_name();
+	if (new_type == SELF_TYPE) {
+		emit_load_address(T1, CLASSOBJTAB, s);
+		emit_load(T2, TAG_OFFSET, SELF, s);
+		emit_sll(T2, T2, 3, s);
+		emit_addu(T1, T1, T2, s);
+		// T1 nows holds the pointer to proto object
+		emit_store(T1, 0, SP, s);
+		emit_addiu(SP, SP, -4, s);
+		emit_load(ACC, 0, T1, s);
+		emit_jal(OBJECT_COPY, s);
+		// Init method
+		emit_load(T1, 1, SP, s);
+		emit_addiu(SP, SP, 4, s);
+		emit_load(T1, 1, T1, s);
+		emit_jalr(T1, s);
+		return;
+	}
 
 	emit_partial_load_address(ACC, s); s << new_type->get_string() << PROTOBJ_SUFFIX << endl;
 	emit_jal(OBJECT_COPY, s);
