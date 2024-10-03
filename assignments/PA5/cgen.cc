@@ -241,6 +241,7 @@ void program_class::cgen(ostream &os)
 
 	initialize_constants();
 	codegen_classtable = new CgenClassTable(classes, os);
+	codegen_classtable->code_init();
 	codegen_classtable->code_method();
 
 	os << "\n# end of generated code\n";
@@ -1124,7 +1125,6 @@ void CgenClassTable::code()
 	//                   - object initializer
 	//                   - the class methods
 	//                   - etc...
-	code_init();
 }
 
 
@@ -1259,7 +1259,14 @@ void CgenNode::code_init(ostream& s) {
 	env->so->set_node(this);
 	env->so->set_method(INIT_METHOD);
 	s << get_name()->get_string() << CLASSINIT_SUFFIX << ":" << endl;
-	emit_setup_frame(0, s);
+
+	// get num of locals required
+	int num_local = 0;
+	for (int i = features->first(); features->more(i); i = features->next(i)) {
+		if (features->nth(i)->is_method()) continue;
+		num_local = MAX(num_local, features->nth(i)->get_init()->get_local_var_num());
+	}
+	emit_setup_frame(num_local, s);
 
 	// Call parent init method
 	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
@@ -1274,11 +1281,11 @@ void CgenNode::code_init(ostream& s) {
 			continue;
 		// Unlike let, if an attribute is not initialized, no need to generate code for them
 		// cause the proto object already initialize them to 0
-		if (!features->nth(i)->get_init()->is_no_expr()) {
-			features->nth(i)->get_init()->code(s);
-			int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
-			emit_store(ACC, attr_offset, SELF, s);
-		}
+		if (features->nth(i)->get_init()->is_no_expr())
+			continue;
+		features->nth(i)->get_init()->code(s);
+		int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
+		emit_store(ACC, attr_offset, SELF, s);
 	}
 
 	emit_move(ACC, SELF, s); // return value (return SELF)

@@ -115,7 +115,6 @@ private:
     void code_class_objTab();
     void code_dispTab();
     void code_protObj();
-    void code_init();
 
     // The following creates an inheritance graph from
     // a list of classes.  The graph is implemented as
@@ -144,6 +143,7 @@ public:
     // classtable must be initialized before case expr can access it
     // so put code_method separately instead of inside its constructor
     void code_method(); 
+    void code_init();
 };
 
 class CgenNode : public class__class
