@@ -458,7 +458,7 @@ public:
          int num = cases->nth(i)->get_expr()->get_local_var_num();
          max_num = num > max_num ? num : max_num;
       }
-      return max_num > 1 ? max_num : 1;
+      return 1 + max_num;
    }
 
 #ifdef Expression_SHARED_EXTRAS
