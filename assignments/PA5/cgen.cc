@@ -1362,11 +1362,21 @@ void static_dispatch_class::code(ostream &s)
 	emit_label_def(label_num++, s);
 
 	// Dispatch table
-	emit_load(T1, 2, ACC, s);
 	Symbol expr_type = this->type_name;
 	if (expr_type == SELF_TYPE) {
 		expr_type = env->so->get_node()->get_name();
 	}
+	int tag = codegen_classtable->get_node_by_type(expr_type)->get_class_tag();
+	emit_load_address(T1, CLASSOBJTAB, s);
+	emit_load_imm(T2, tag, s);
+	emit_sll(T2, T2, 3, s);
+	emit_addu(T1, T1, T2, s);
+	emit_load(T1, 0, T1, s);
+	// T1 now holds proto object
+	emit_load(T1, DISPTABLE_OFFSET, T1, s);
+	// T1 now holds dispatch table address
+
+
 	emit_load(T1, env->disp_map->get_method_offset(expr_type, this->name), T1, s);
 	emit_jalr(T1, s);
 
