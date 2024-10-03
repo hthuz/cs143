@@ -1260,8 +1260,10 @@ void CgenNode::code_init(ostream& s) {
 	for (int i = features->first(); features->more(i); i = features->next(i)) {
 		if (features->nth(i)->is_method())
 			continue;
-		features->nth(i)->get_init()->code(s);
+		// Unlike let, if an attribute is not initialized, no need to generate code for them
+		// cause the proto object already initialize them to 0
 		if (!features->nth(i)->get_init()->is_no_expr()) {
+			features->nth(i)->get_init()->code(s);
 			int attr_offset = env->attr_map->get_attr_offset(get_name(), features->nth(i)->get_name());
 			emit_store(ACC, attr_offset, SELF, s);
 		}
@@ -1741,6 +1743,7 @@ void isvoid_class::code(ostream &s)
 
 void no_expr_class::code(ostream &s)
 {
+	emit_move(ACC, ZERO, s);
 }
 
 void object_class::code(ostream &s)
