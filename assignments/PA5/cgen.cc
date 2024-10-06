@@ -1269,7 +1269,7 @@ void CgenNode::code_init(ostream& s) {
 	emit_setup_frame(num_local, s);
 
 	// Call parent init method
-	char* parent_init = new char(strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX));
+	char* parent_init = new char[strlen(get_parent()->get_string()) + strlen(CLASSINIT_SUFFIX)];
 	strncpy(parent_init, get_parent()->get_string(), get_parent()->get_len());
 	strcat(parent_init, CLASSINIT_SUFFIX);
 	if (get_name() != Object)
@@ -1812,7 +1812,7 @@ void new__class::code(ostream &s)
 	emit_partial_load_address(ACC, s); s << new_type->get_string() << PROTOBJ_SUFFIX << endl;
 	emit_jal(OBJECT_COPY, s);
 
-	char* class_init = new char(strlen(new_type->get_string()) + strlen(CLASSINIT_SUFFIX));
+	char* class_init = new char[strlen(new_type->get_string()) + strlen(CLASSINIT_SUFFIX)];
 	strncpy(class_init, new_type->get_string(), new_type->get_len());
 	strcat(class_init, CLASSINIT_SUFFIX);
 	emit_jal(class_init, s);
