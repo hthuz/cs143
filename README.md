@@ -11,3 +11,9 @@ PA2 in the repo corresponding to PA1 in course website (lexer). There's an addit
 **PA2** lexer. Do use `flex` provided in VM, as the latest version of `flex` is not compatible with C. Major difficulity: string and comments. 
 
 **PA3** parser. Major difficulity: dealing with grammer for `let` and error handling.
+
+**PA4** semant. A good task for understanding OOP inheritance and AST traversal. BTW, I don't think SELF_TYPE is a good design in COOL.
+
+**PA5** code generation. The key is to understand how local variables, method arguments and object attributes are allocated in memory.
+
+
