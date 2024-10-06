@@ -1289,7 +1289,7 @@ void CgenNode::code_init(ostream& s) {
 	}
 
 	emit_move(ACC, SELF, s); // return value (return SELF)
-	emit_tear_frame(0, 0, s);
+	emit_tear_frame(num_local, 0, s);
 }
 
 void CgenNode::code_method(ostream& s) {
