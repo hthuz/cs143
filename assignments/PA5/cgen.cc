@@ -726,11 +726,11 @@ void CgenClassTable::code_global_data()
 	// during code generation.
 	//
 	str << INTTAG << LABEL
-		<< WORD << intclasstag << endl;
+		<< WORD << get_node_by_type(Int)->get_class_tag() << endl;
 	str << BOOLTAG << LABEL
-		<< WORD << boolclasstag << endl;
+		<< WORD << get_node_by_type(Bool)->get_class_tag() << endl;
 	str << STRINGTAG << LABEL
-		<< WORD << stringclasstag << endl;
+		<< WORD << get_node_by_type(Str)->get_class_tag() << endl;
 }
 
 //***************************************************
@@ -1720,17 +1720,19 @@ void eq_class::code(ostream &s)
 	}
 
 	e1->code(s);
-	emit_load(T1, ATTR0_OFFSET, ACC, s);
-	emit_store(T1, 0, SP, s);
+	emit_store(ACC, 0, SP, s);
 	emit_addiu(SP, SP, -4, s);
 	e2->code(s);
 
 	// Compare
 	emit_load(T1, 1, SP, s);
-	emit_load(T2, ATTR0_OFFSET, ACC, s);
+	emit_move(T2, ACC, s);
 	emit_partial_load_address(ACC, s); truebool.code_ref(s); s << endl;
 	emit_beq(T1, T2, label_num, s);
-	emit_partial_load_address(ACC, s); falsebool.code_ref(s); s << endl;
+
+	emit_partial_load_address(A1, s); falsebool.code_ref(s); s << endl;
+
+	emit_jal(EQUALITY_TEST, s);
 
 	// Next step
 	emit_label_def(label_num++, s);

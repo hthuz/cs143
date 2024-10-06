@@ -97,11 +97,11 @@ private:
     List<CgenNode> *nds;
     ostream &str;
     int total_class_tag_num;
-    int objectclasstag;
-    int ioclasstag;
-    int stringclasstag;
-    int intclasstag;
-    int boolclasstag;
+    // int objectclasstag;
+    // int ioclasstag;
+    // int stringclasstag;
+    // int intclasstag;
+    // int boolclasstag;
 
     // The following methods emit code for
     // constants and global declarations.
