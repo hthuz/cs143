@@ -154,17 +154,6 @@ bool equal_method_name(Method* m1, Method* m2) {
 	return (m1->method_name == m2->method_name);
 }
 
-class Location{
-public:
-
-};
-
-class Environment : public SymbolTable<IdEntry, Location>{
-};
-
-class Store : public SymbolTable<Location, Entry> {
-};
-
 // Type => dispatch table(with only method symbol)
 // Bottom: methods of current Object
 // Top: methods of Object
@@ -211,15 +200,11 @@ public:
 
 class CgenEnv {
 public:
-  Environment* E;
-  Store* S;
   SelfObject* so;
   DispMap* disp_map; // type => dispatch table
   AttrMap* attr_map; // type => attribute(feature)
   LocalMap* local_map;
   CgenEnv() {
-    E = new Environment();
-    S = new Store();
     so = new SelfObject();
 	disp_map = new DispMap();
 	attr_map = new AttrMap();
